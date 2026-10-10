@@ -12,6 +12,8 @@ The reusable engineering platform remains private and Mark-owned:
 
 Each developer owns their own POC repositories. This public control plane contains only request/orchestration code; it must not contain private POC product definitions, GitHub App private keys, personal access tokens, or other credentials.
 
+Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic generation; this repository owns secure cross-account orchestration and publication.
+
 ## Request model
 
 A generation request is a public issue whose title contains only:
@@ -20,6 +22,8 @@ A generation request is a public issue whose title contains only:
 [generate-poc] owner/repository
 ```
 
+The issue body must be empty. Request validation rejects any non-whitespace body so an approved manifest or private product definition cannot be accidentally submitted through the public request surface.
+
 The approved `POC_BOOTSTRAP.json` stays private in the target repository. The request author must match the target owner and be present in `config/allowed-owners.json`.
 
 The workflow uses short-lived GitHub App installation tokens scoped separately to:
@@ -27,15 +31,10 @@ The workflow uses short-lived GitHub App installation tokens scoped separately t
 1. Mark-owned Bootstrap/Core source repositories; and
 2. the single requested target POC repository.
 
-See `docs/SETUP.md` for GitHub App configuration and migration details.
+See `docs/SETUP.md` for GitHub App configuration and operating details.
 
-## Current status
+## Proven path
 
-This repository is not canonical generation infrastructure until all of the following are true:
+The GitHub App path has been exercised end to end for both a Mark-owned private target and a second developer-owned private target, including request validation, separate source/target installation tokens, deterministic generation, publication, and target default-branch CI.
 
-1. the initial control-plane PR is merged with green CI;
-2. the GitHub App is created and installed on approved developer accounts;
-3. an end-to-end generation test succeeds;
-4. `mriekki/lean-poc-bootstrap` explicitly advances its protocol/catalog to the multi-owner control plane.
-
-Until then, Bootstrap protocol v4 remains authoritative.
+The former Bootstrap v4 PAT-based workflow is legacy infrastructure and is retired when Bootstrap protocol v5 is accepted. Do not add personal access tokens to this control plane.
