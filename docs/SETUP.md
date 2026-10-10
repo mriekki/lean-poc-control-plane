@@ -2,6 +2,8 @@
 
 This repository is the public orchestration surface for multi-owner Lean POC generation. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`; Core remains private in `mriekki/lean-agentic-core`.
 
+Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface.
+
 ## Security boundary
 
 The public issue request contains only a target repository name:
@@ -10,13 +12,15 @@ The public issue request contains only a target repository name:
 [generate-poc] owner/repository
 ```
 
+The issue body must be empty. The request validator rejects any non-whitespace body.
+
 The approved `POC_BOOTSTRAP.json` remains inside that developer's private target repository. The workflow reads it only after minting a GitHub App installation token scoped to that target repository.
 
 Do not store personal access tokens in this repository. The intended credential is one GitHub App private key stored as an Actions secret. The workflow mints short-lived installation tokens separately for source and target access.
 
 ## GitHub App registration
 
-Create one GitHub App owned by `mriekki` and configure it so it can be installed on both Mark's and Kyle's personal accounts.
+Create one GitHub App owned by `mriekki` and configure it so it can be installed on approved developer accounts.
 
 Recommended identity:
 
@@ -61,17 +65,20 @@ The private key should exist only in GitHub's App configuration and this reposit
 
 After discovery and manifest approval:
 
-1. The developer creates the private target repository under their own GitHub account.
-2. ChatGPT writes only the approved `POC_BOOTSTRAP.json` seed to that target repository (an optional default GitHub README stub may coexist).
-3. ChatGPT opens a public issue here with title `[generate-poc] owner/repository`; the issue body contains no private product definition and no secret.
-4. The request author must equal the target owner and must appear in `config/allowed-owners.json`.
-5. The workflow obtains repository-scoped GitHub App installation tokens.
-6. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, recipe/catalog contract, and exact Core commit.
-7. The deterministic generator replaces only the approved seed state with the generated workspace baseline.
-8. ChatGPT verifies target default-branch CI before local clone/fetch and setup acceptance.
+1. If ChatGPT cannot create repositories, the developer creates a **private, empty, uninitialized** target repository under their own GitHub account. Do not add a README, `.gitignore`, license, or application files.
+2. ChatGPT verifies the authenticated GitHub identity exactly matches the approved target owner and verifies the target is safe for first publication.
+3. ChatGPT writes only the approved `POC_BOOTSTRAP.json` seed to that target repository.
+4. ChatGPT opens a public issue here with title `[generate-poc] owner/repository` and an empty body.
+5. The request author must equal the target owner and must appear in `config/allowed-owners.json`.
+6. The workflow obtains repository-scoped GitHub App installation tokens.
+7. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, recipe/catalog contract, and exact Core commit.
+8. The deterministic generator replaces only the approved seed state with the generated workspace baseline.
+9. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
 
-## Migration from Bootstrap v4
+A missing/inaccessible target repository or a failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
 
-Until Bootstrap protocol v5 is explicitly merged after this control plane passes an end-to-end test, the existing v4 PAT-based generation workflow in `mriekki/lean-poc-bootstrap` remains the canonical Mark-only service.
+## Bootstrap v4 retirement
 
-Do not delete `LEAN_POC_AUTOMATION_TOKEN` or the v4 workflow merely because this repository exists. Retirement is a separate migration step after the GitHub App path is proven.
+Bootstrap protocol v5 retires the old Bootstrap-hosted PAT workflow. After the Bootstrap v5 PR is merged and its post-merge `main` CI is green, the platform owner should manually remove the obsolete `LEAN_POC_AUTOMATION_TOKEN` Actions secret and revoke/delete the corresponding personal access token.
+
+Do not expose, paste, or inspect the old token during retirement.
