@@ -1,0 +1,187 @@
+name: Generate POC
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: poc-generation-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    if: startsWith(github.event.issue.title, '[generate-poc] ')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public control plane
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate public request envelope
+        id: request
+        shell: bash
+        run: |
+          python tools/request.py extract \
+            --event "$GITHUB_EVENT_PATH" \
+            --allowed-owners config/allowed-owners.json
+
+      - name: Create source installation token
+        id: source-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mriekki
+          repositories: |
+            lean-poc-bootstrap
+            lean-agentic-core
+          permission-contents: read
+
+      - name: Create target installation token
+        id: target-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ steps.request.outputs.target_owner }}
+          repositories: ${{ steps.request.outputs.target_name }}
+          permission-contents: write
+          permission-workflows: write
+
+      - name: Checkout accepted Bootstrap control plane
+        uses: actions/checkout@v4
+        with:
+          repository: mriekki/lean-poc-bootstrap
+          token: ${{ steps.source-token.outputs.token }}
+          path: bootstrap
+          fetch-depth: 1
+
+      - name: Resolve accepted Bootstrap commit
+        id: bootstrap
+        shell: bash
+        run: echo "sha=$(git -C bootstrap rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout private target seed
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.request.outputs.target_repository }}
+          token: ${{ steps.target-token.outputs.token }}
+          path: target
+          fetch-depth: 0
+
+      - name: Verify target is safe for first publication
+        shell: bash
+        run: |
+          python bootstrap/tools/remote_generation.py preflight-target \
+            --root target \
+            --repository "${{ steps.request.outputs.target_repository }}"
+
+      - name: Validate private approved manifest
+        id: manifest
+        shell: bash
+        run: |
+          python bootstrap/tools/remote_generation.py validate-manifest \
+            --manifest target/POC_BOOTSTRAP.json \
+            --request-author "${{ steps.request.outputs.request_author }}" \
+            --expected-bootstrap-commit "${{ steps.bootstrap.outputs.sha }}" \
+            --expected-target-repository "${{ steps.request.outputs.target_repository }}" \
+            --expected-target-owner "${{ steps.request.outputs.target_owner }}" \
+            --allowed-target-owner "${{ steps.request.outputs.target_owner }}"
+
+      - name: Checkout pinned Lean Core source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.manifest.outputs.core_repository }}
+          ref: ${{ steps.manifest.outputs.core_commit }}
+          token: ${{ steps.source-token.outputs.token }}
+          path: core
+
+      - name: Generate deterministic workspace
+        shell: bash
+        run: |
+          python bootstrap/tools/generate_snapshot.py \
+            --manifest target/POC_BOOTSTRAP.json \
+            --output "$RUNNER_TEMP/generated" \
+            --core-path core
+
+      - name: Validate generated workspace
+        shell: bash
+        run: |
+          python -m compileall -q "$RUNNER_TEMP/generated/tools"
+          python "$RUNNER_TEMP/generated/tools/lean-core/check-core-baseline.py" \
+            --root "$RUNNER_TEMP/generated"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'generated'
+          for name in ['POC_BOOTSTRAP.json', 'DEV_ENVIRONMENT.json', 'SCAFFOLD_PLAN.json', 'CORE_BASELINE.json']:
+              json.loads((root / name).read_text(encoding='utf-8'))
+              print('OK', name)
+          PY
+
+      - name: Publish generated baseline
+        id: publish
+        shell: bash
+        env:
+          PROJECT_SLUG: ${{ steps.manifest.outputs.project_slug }}
+        run: |
+          set -euo pipefail
+          target="$GITHUB_WORKSPACE/target"
+          generated="$RUNNER_TEMP/generated"
+
+          target_branch="$(git -C "$target" branch --show-current)"
+          if [ -z "$target_branch" ]; then
+            echo "Unable to resolve target default branch." >&2
+            exit 2
+          fi
+
+          find "$target" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} +
+          cp -a "$generated"/. "$target"/
+
+          git -C "$target" config user.name "lean-poc-control-plane[bot]"
+          git -C "$target" config user.email "noreply@github.com"
+          git -C "$target" add -A
+          git -C "$target" diff --cached --check
+
+          if git -C "$target" diff --cached --quiet; then
+            echo "Generated publication produced no changes." >&2
+            exit 2
+          fi
+
+          git -C "$target" commit -m "Generate ${PROJECT_SLUG} workspace baseline"
+          git -C "$target" push origin "HEAD:${target_branch}"
+          echo "commit=$(git -C "$target" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "branch=$target_branch" >> "$GITHUB_OUTPUT"
+
+      - name: Report successful generation
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TARGET_REPOSITORY: ${{ steps.request.outputs.target_repository }}
+          TARGET_COMMIT: ${{ steps.publish.outputs.commit }}
+          TARGET_BRANCH: ${{ steps.publish.outputs.branch }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Generation published to \`$TARGET_REPOSITORY\` on \`$TARGET_BRANCH\` at \`$TARGET_COMMIT\`. Verify target default-branch CI before local clone/setup acceptance."
+          gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+
+      - name: Report failed generation
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Remote POC generation failed. No publication success is implied. Inspect this workflow run before retrying or modifying the target repository."
