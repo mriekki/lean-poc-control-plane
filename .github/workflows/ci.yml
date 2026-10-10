@@ -19,7 +19,8 @@ jobs:
       - name: Compile Python
         run: python -m compileall -q tools tests
       - name: Validate JSON
-        run: python - <<'PY'
+        run: |
+          python - <<'PY'
           import json
           from pathlib import Path
           for path in sorted(Path('.').rglob('*.json')):
