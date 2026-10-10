@@ -53,6 +53,12 @@ def parse_request(event: dict[str, Any], allowed_owners: set[str]) -> dict[str, 
     if not isinstance(issue, dict):
         raise RequestError("Generation requires a GitHub issue event")
 
+    body = str(issue.get("body") or "")
+    if body.strip():
+        raise RequestError(
+            "Generation request body must be empty; keep the approved POC_BOOTSTRAP.json private in the target repository"
+        )
+
     author = str((issue.get("user") or {}).get("login") or "").strip()
     title = str(issue.get("title") or "").strip()
     match = re.fullmatch(r"\[generate-poc\]\s+([^/\s]+)/([^/\s]+)", title)
