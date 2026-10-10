@@ -14,12 +14,18 @@ SPEC.loader.exec_module(request)
 
 
 class RequestTests(unittest.TestCase):
-    def event(self, *, author: str = "mriekki", title: str = "[generate-poc] mriekki/example-poc") -> dict:
+    def event(
+        self,
+        *,
+        author: str = "mriekki",
+        title: str = "[generate-poc] mriekki/example-poc",
+        body: str = "",
+    ) -> dict:
         return {
             "issue": {
                 "number": 42,
                 "title": title,
-                "body": "",
+                "body": body,
                 "user": {"login": author},
             }
         }
@@ -28,6 +34,18 @@ class RequestTests(unittest.TestCase):
         values = request.parse_request(self.event(), {"mriekki"})
         self.assertEqual(values["target_repository"], "mriekki/example-poc")
         self.assertEqual(values["request_author"], "mriekki")
+
+    def test_public_issue_body_must_be_empty(self) -> None:
+        for body in (
+            '{"state":"approved"}',
+            "private product definition",
+        ):
+            with self.subTest(body=body):
+                with self.assertRaises(request.RequestError):
+                    request.parse_request(self.event(body=body), {"mriekki"})
+
+        values = request.parse_request(self.event(body="  \n"), {"mriekki"})
+        self.assertEqual(values["target_repository"], "mriekki/example-poc")
 
     def test_author_must_match_target_owner(self) -> None:
         with self.assertRaises(request.RequestError):
