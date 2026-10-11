@@ -262,10 +262,12 @@ jobs:
           TARGET_REPOSITORY: ${{ steps.request.outputs.target_repository }}
         run: |
           set -euo pipefail
-          head_sha="$(gh pr view "$PR_URL" --json headRefOid --jq '.headRefOid')"
+          pr_number="${PR_URL##*/}"
+          head_sha="$(gh api "/repos/$TARGET_REPOSITORY/pulls/$pr_number" --jq '.head.sha')"
           checks=0
           for _ in $(seq 1 60); do
-            checks="$(gh api "/repos/$TARGET_REPOSITORY/commits/$head_sha/check-runs" --jq '.total_count')"
+            checks_json="$(gh api "/repos/$TARGET_REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
+            checks="$(jq -r '.total_count' <<<"$checks_json")"
             if [ "$checks" -gt 0 ]; then
               break
             fi
@@ -275,7 +277,40 @@ jobs:
             echo "No consumer PR checks registered within 120 seconds." >&2
             exit 2
           fi
-          gh pr checks "$PR_URL" --watch --fail-fast
+
+          stable_complete_polls=0
+          last_count=-1
+          for _ in $(seq 1 360); do
+            checks_json="$(gh api "/repos/$TARGET_REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
+            checks="$(jq -r '.total_count' <<<"$checks_json")"
+            failures="$(jq -r '[.check_runs[] | select(.status == "completed" and (.conclusion != "success" and .conclusion != "neutral" and .conclusion != "skipped"))] | length' <<<"$checks_json")"
+            pending="$(jq -r '[.check_runs[] | select(.status != "completed")] | length' <<<"$checks_json")"
+
+            if [ "$failures" -gt 0 ]; then
+              jq -r '.check_runs[] | select(.status == "completed" and (.conclusion != "success" and .conclusion != "neutral" and .conclusion != "skipped")) | "Consumer check failed: \(.name) -> \(.conclusion)"' <<<"$checks_json" >&2
+              exit 1
+            fi
+
+            if [ "$pending" -eq 0 ]; then
+              if [ "$checks" -eq "$last_count" ]; then
+                stable_complete_polls=$((stable_complete_polls + 1))
+              else
+                stable_complete_polls=1
+              fi
+              if [ "$stable_complete_polls" -ge 3 ]; then
+                echo "Consumer PR checks are green and stable ($checks check run(s))."
+                exit 0
+              fi
+            else
+              stable_complete_polls=0
+            fi
+
+            last_count="$checks"
+            sleep 5
+          done
+
+          echo "Consumer PR checks did not settle within 30 minutes." >&2
+          exit 2
 
       - name: Report already-current consumer
         if: success() && steps.freshness.outputs.current == 'true'
