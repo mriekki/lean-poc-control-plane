@@ -259,7 +259,22 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.target-token.outputs.token }}
           PR_URL: ${{ steps.pr.outputs.url }}
+          TARGET_REPOSITORY: ${{ steps.request.outputs.target_repository }}
         run: |
+          set -euo pipefail
+          head_sha="$(gh pr view "$PR_URL" --json headRefOid --jq '.headRefOid')"
+          checks=0
+          for _ in $(seq 1 60); do
+            checks="$(gh api "/repos/$TARGET_REPOSITORY/commits/$head_sha/check-runs" --jq '.total_count')"
+            if [ "$checks" -gt 0 ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ "$checks" -eq 0 ]; then
+            echo "No consumer PR checks registered within 120 seconds." >&2
+            exit 2
+          fi
           gh pr checks "$PR_URL" --watch --fail-fast
 
       - name: Report already-current consumer
