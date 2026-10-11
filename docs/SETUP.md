@@ -1,22 +1,23 @@
 # Control Plane Setup
 
-This repository is the public orchestration surface for multi-owner Lean POC generation. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`; Core remains private in `mriekki/lean-agentic-core`.
+This repository is the public orchestration surface for multi-owner Lean POC generation and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`; Core remains private in `mriekki/lean-agentic-core`.
 
-Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface.
+Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface. Generated consumers may also configure this repository as their remote `/core-sync` provider so a developer does not need a local Core clone just to receive an accepted Core update.
 
 ## Security boundary
 
-The public issue request contains only a target repository name:
+Public issue requests contain only a target repository name:
 
 ```text
 [generate-poc] owner/repository
+[sync-core] owner/repository
 ```
 
 The issue body must be empty. The request validator rejects any non-whitespace body.
 
-The approved `POC_BOOTSTRAP.json` remains inside that developer's private target repository. The workflow reads it only after minting a GitHub App installation token scoped to that target repository.
+Private generation data stays in the target repository's `POC_BOOTSTRAP.json`. Private Core provenance stays in the target repository's `CORE_BASELINE.json`. Workflows read those target-private files only after minting a GitHub App installation token scoped to that exact repository.
 
-Do not store personal access tokens in this repository. The intended credential is one GitHub App private key stored as an Actions secret. The workflow mints short-lived installation tokens separately for source and target access.
+Do not store personal access tokens in this repository. The intended credential is one GitHub App private key stored as an Actions secret. The workflows mint short-lived installation tokens separately for source and target access.
 
 ## GitHub App registration
 
@@ -28,26 +29,29 @@ Recommended identity:
 GitHub App name: Lean POC Generator
 ```
 
-Required repository permissions:
+Required repository permissions for generation plus remote Core sync:
 
-- **Contents: Read and write** — source checkout plus generated target commit/push;
-- **Workflows: Read and write** — generated targets contain `.github/workflows/ci.yml`;
+- **Contents: Read and write** — source checkout plus generated/synchronized target branch commit/push;
+- **Workflows: Read and write** — generated targets may contain `.github/workflows/ci.yml` and future Core distributions must not be blocked from updating managed workflow files;
+- **Pull requests: Read and write** — remote Core sync creates the consumer PR after publishing the sync branch;
+- **Checks: Read-only** — remote Core sync observes consumer PR checks before reporting success;
 - **Metadata: Read-only** — GitHub-required repository metadata access.
 
 The control plane does not need target-repository Issues permission. It comments on its own public request issue using that workflow run's normal `GITHUB_TOKEN`.
 
-The App does not need webhooks for this design; generation is initiated by this repository's issue-triggered Actions workflow.
+The App does not need webhooks for this design; generation and Core sync are initiated by this repository's issue-triggered Actions workflows.
 
-Allow installation on **Any account** so each approved developer can install the same App on their personal GitHub account.
+When Pull requests or Checks permissions are added to an existing App installation, GitHub may require the installation owner to approve the expanded permissions. Confirm the updated installation is active for each allowlisted developer before relying on remote Core sync.
 
 ## Installations
 
-For a zero-extra-step future POC flow, install the App on all repositories in each approved developer account. The workflow still mints tokens scoped to the exact repositories required by that generation run:
+For a zero-extra-step future POC flow, install the App on all repositories in each approved developer account. Each workflow still mints tokens scoped to the exact repositories required by that run:
 
-- source token: only `mriekki/lean-poc-bootstrap` and `mriekki/lean-agentic-core`;
+- generation source token: only `mriekki/lean-poc-bootstrap` and `mriekki/lean-agentic-core`;
+- Core-sync source token: only `mriekki/lean-agentic-core`;
 - target token: only the requested `owner/repository`.
 
-If an account prefers selecting repositories instead of all repositories, every newly created POC repo must be added to the App installation before generation.
+If an account prefers selecting repositories instead of all repositories, every newly created POC repo must be added to the App installation before generation or remote Core sync.
 
 ## Control-plane Actions configuration
 
@@ -61,7 +65,7 @@ After creating the App:
 
 The private key should exist only in GitHub's App configuration and this repository's Actions secret store. Rotate it if exposure is suspected.
 
-## Per-POC request contract
+## Per-POC generation request contract
 
 After discovery and manifest approval:
 
@@ -76,6 +80,39 @@ After discovery and manifest approval:
 9. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
 
 A missing/inaccessible target repository or a failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
+
+## Remote Core-sync request contract
+
+A generated/self-contained consumer may configure the generic Core `/core-sync` skill with this provider. When no safe local Core checkout is available, the developer authorizes one public request:
+
+```text
+[sync-core] owner/repository
+```
+
+with an empty body.
+
+The remote workflow then:
+
+1. verifies the request author equals the target owner and the owner is allowlisted;
+2. refuses foundational/platform repositories, including Family Meal Planner's specialized consumer path;
+3. mints a read-only source token scoped only to `mriekki/lean-agentic-core`;
+4. mints a target token scoped only to the requested consumer;
+5. checks out current accepted Core `main` and the consumer default branch;
+6. validates the consumer's `CORE_BASELINE.json` is schema version 1, belongs to `mriekki/lean-agentic-core`, uses `greenfield-workspace`, and has managed-path provenance;
+7. runs Core's canonical baseline-integrity check before making target changes;
+8. exits cleanly without a branch if the consumer already matches current Core;
+9. otherwise runs the canonical Core sync preview and refuses unsafe drift/conflicts during apply;
+10. creates a new `chore/sync-core-<short-sha>` branch without force-updating any existing branch;
+11. applies the managed overlay and refreshes exact `CORE_BASELINE.json` provenance;
+12. re-runs baseline integrity and strict current-Core checks;
+13. commits and pushes only the new sync branch;
+14. creates a consumer PR;
+15. waits for the consumer PR checks; and
+16. reports success on the public request only when those checks are green.
+
+The remote request never authorizes merging the consumer PR. The normal human merge/finalize gate remains.
+
+If the consumer has Core-managed local drift, missing managed files, conflicts, an unsupported distribution, or an existing sync branch for that Core commit, the workflow stops rather than overwriting or force-updating state.
 
 ## Bootstrap v4 retirement
 

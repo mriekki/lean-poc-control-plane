@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 REQUEST_PREFIX = "[generate-poc]"
+SYNC_REQUEST_PREFIX = "[sync-core]"
 FOUNDATIONAL_REPOSITORIES = {
     "mriekki/lean-agentic-core",
     "mriekki/lean-poc-bootstrap",
@@ -48,27 +49,33 @@ def load_allowed_owners(path: Path) -> set[str]:
     return normalized
 
 
-def parse_request(event: dict[str, Any], allowed_owners: set[str]) -> dict[str, str]:
+def _parse_target_request(
+    event: dict[str, Any],
+    allowed_owners: set[str],
+    *,
+    prefix: str,
+    request_label: str,
+) -> dict[str, str]:
     issue = event.get("issue")
     if not isinstance(issue, dict):
-        raise RequestError("Generation requires a GitHub issue event")
+        raise RequestError(f"{request_label} requires a GitHub issue event")
 
     body = str(issue.get("body") or "")
     if body.strip():
         raise RequestError(
-            "Generation request body must be empty; keep the approved POC_BOOTSTRAP.json private in the target repository"
+            f"{request_label} request body must be empty; keep private target details in the target repository"
         )
 
     author = str((issue.get("user") or {}).get("login") or "").strip()
     title = str(issue.get("title") or "").strip()
-    match = re.fullmatch(r"\[generate-poc\]\s+([^/\s]+)/([^/\s]+)", title)
+    match = re.fullmatch(rf"{re.escape(prefix)}\s+([^/\s]+)/([^/\s]+)", title)
     if not match:
-        raise RequestError("Issue title must be exactly '[generate-poc] owner/repository'")
+        raise RequestError(f"Issue title must be exactly '{prefix} owner/repository'")
 
     owner, repository_name = match.groups()
     if author.lower() != owner.lower():
         raise RequestError(
-            f"Generation request author must own the target repository ({owner}); found {author or 'unknown'}"
+            f"{request_label} request author must own the target repository ({owner}); found {author or 'unknown'}"
         )
     if owner.lower() not in allowed_owners:
         raise RequestError(f"Target owner is not enabled for this control plane: {owner}")
@@ -77,7 +84,7 @@ def parse_request(event: dict[str, Any], allowed_owners: set[str]) -> dict[str, 
 
     repository = f"{owner}/{repository_name}"
     if repository.lower() in {value.lower() for value in FOUNDATIONAL_REPOSITORIES}:
-        raise RequestError(f"Refusing foundational repository as generation target: {repository}")
+        raise RequestError(f"Refusing foundational repository as {request_label.lower()} target: {repository}")
 
     number = str(issue.get("number") or "")
     if not number.isdigit():
@@ -90,6 +97,24 @@ def parse_request(event: dict[str, Any], allowed_owners: set[str]) -> dict[str, 
         "request_author": author,
         "issue_number": number,
     }
+
+
+def parse_request(event: dict[str, Any], allowed_owners: set[str]) -> dict[str, str]:
+    return _parse_target_request(
+        event,
+        allowed_owners,
+        prefix=REQUEST_PREFIX,
+        request_label="Generation",
+    )
+
+
+def parse_sync_request(event: dict[str, Any], allowed_owners: set[str]) -> dict[str, str]:
+    return _parse_target_request(
+        event,
+        allowed_owners,
+        prefix=SYNC_REQUEST_PREFIX,
+        request_label="Core sync",
+    )
 
 
 def write_github_output(values: dict[str, str]) -> None:
@@ -105,9 +130,15 @@ def write_github_output(values: dict[str, str]) -> None:
 
 def extract_command(args: argparse.Namespace) -> int:
     allowed = load_allowed_owners(args.allowed_owners)
-    values = parse_request(read_json(args.event), allowed)
+    event = read_json(args.event)
+    if args.request_type == "generate-poc":
+        values = parse_request(event, allowed)
+        label = "generation"
+    else:
+        values = parse_sync_request(event, allowed)
+        label = "Core sync"
     write_github_output(values)
-    print(f"Validated public generation request for {values['target_repository']}")
+    print(f"Validated public {label} request for {values['target_repository']}")
     return 0
 
 
@@ -118,6 +149,12 @@ def parse_args() -> argparse.Namespace:
     extract = sub.add_parser("extract", help="Validate an issue request and emit target metadata")
     extract.add_argument("--event", required=True, type=Path)
     extract.add_argument("--allowed-owners", required=True, type=Path)
+    extract.add_argument(
+        "--request-type",
+        choices=("generate-poc", "sync-core"),
+        default="generate-poc",
+        help="Public request contract to validate",
+    )
     extract.set_defaults(func=extract_command)
     return parser.parse_args()
 
