@@ -1,0 +1,303 @@
+name: Sync Core
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: core-sync-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: startsWith(github.event.issue.title, '[sync-core] ')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public control plane
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate public request envelope
+        id: request
+        shell: bash
+        run: |
+          python tools/request.py extract \
+            --request-type sync-core \
+            --event "$GITHUB_EVENT_PATH" \
+            --allowed-owners config/allowed-owners.json
+
+      - name: Create Core source installation token
+        id: source-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mriekki
+          repositories: lean-agentic-core
+          permission-contents: read
+
+      - name: Create target installation token
+        id: target-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ steps.request.outputs.target_owner }}
+          repositories: ${{ steps.request.outputs.target_name }}
+          permission-contents: write
+          permission-workflows: write
+          permission-pull-requests: write
+          permission-checks: read
+
+      - name: Checkout accepted Lean Core source
+        uses: actions/checkout@v4
+        with:
+          repository: mriekki/lean-agentic-core
+          token: ${{ steps.source-token.outputs.token }}
+          path: core
+          fetch-depth: 1
+
+      - name: Resolve accepted Core commit
+        id: core
+        shell: bash
+        run: |
+          echo "sha=$(git -C core rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          data = json.loads(Path('core/COMPATIBILITY.json').read_text(encoding='utf-8'))
+          print(f"version={data['leanCoreVersion']}")
+          PY
+
+      - name: Checkout private target consumer
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.request.outputs.target_repository }}
+          token: ${{ steps.target-token.outputs.token }}
+          path: target
+          fetch-depth: 0
+
+      - name: Validate target Core consumer
+        id: target
+        shell: bash
+        env:
+          EXPECTED_REPOSITORY: ${{ steps.request.outputs.target_repository }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          baseline_path = Path('target/CORE_BASELINE.json')
+          if not baseline_path.is_file():
+              raise SystemExit('Target is not a Core consumer: CORE_BASELINE.json is missing')
+          baseline = json.loads(baseline_path.read_text(encoding='utf-8'))
+          if baseline.get('schemaVersion') != 1:
+              raise SystemExit('Unsupported CORE_BASELINE.json schemaVersion')
+          if baseline.get('coreRepository') != 'mriekki/lean-agentic-core':
+              raise SystemExit('Target baseline does not belong to mriekki/lean-agentic-core')
+          if baseline.get('distribution') != 'greenfield-workspace':
+              raise SystemExit('Remote control-plane sync currently supports greenfield-workspace consumers only')
+          commit = str(baseline.get('coreCommit') or '')
+          if not re.fullmatch(r'[0-9a-f]{40}', commit):
+              raise SystemExit('Target baseline has an invalid Core commit')
+          if not isinstance(baseline.get('managedPaths'), list) or not baseline['managedPaths']:
+              raise SystemExit('Target baseline has no managed Core paths')
+          if not baseline.get('consumer') or not baseline.get('consumerBaseline'):
+              raise SystemExit('Target baseline is missing consumer identity metadata')
+
+          output = Path(os.environ['GITHUB_OUTPUT'])
+          with output.open('a', encoding='utf-8') as handle:
+              handle.write('distribution=greenfield-workspace\n')
+              handle.write(f'previous_core_commit={commit}\n')
+          PY
+
+          default_branch="$(git -C target branch --show-current)"
+          if [ -z "$default_branch" ]; then
+            echo "Unable to resolve target default branch." >&2
+            exit 2
+          fi
+          echo "default_branch=$default_branch" >> "$GITHUB_OUTPUT"
+
+      - name: Verify current managed-overlay integrity
+        shell: bash
+        run: |
+          python core/tools/package/check_baseline.py --root target
+
+      - name: Check whether Core is already current
+        id: freshness
+        shell: bash
+        run: |
+          set +e
+          python core/tools/package/sync.py \
+            "${{ steps.target.outputs.distribution }}" \
+            --output target \
+            --core-commit "${{ steps.core.outputs.sha }}" \
+            --check
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Preview Core sync
+        if: steps.freshness.outputs.current != 'true'
+        shell: bash
+        run: |
+          python core/tools/package/sync.py \
+            "${{ steps.target.outputs.distribution }}" \
+            --output target \
+            --core-commit "${{ steps.core.outputs.sha }}"
+
+      - name: Prepare target sync branch
+        if: steps.freshness.outputs.current != 'true'
+        id: branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_sha="${{ steps.core.outputs.sha }}"
+          short_sha="${short_sha:0:12}"
+          branch="chore/sync-core-${short_sha}"
+          if git -C target ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1; then
+            echo "Refusing to overwrite existing remote sync branch: $branch" >&2
+            exit 2
+          fi
+          git -C target switch -c "$branch"
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Apply canonical Core sync
+        if: steps.freshness.outputs.current != 'true'
+        shell: bash
+        run: |
+          python core/tools/package/sync.py \
+            "${{ steps.target.outputs.distribution }}" \
+            --output target \
+            --core-commit "${{ steps.core.outputs.sha }}" \
+            --apply
+
+      - name: Verify synchronized target
+        if: steps.freshness.outputs.current != 'true'
+        shell: bash
+        run: |
+          python core/tools/package/check_baseline.py --root target
+          python core/tools/package/sync.py \
+            "${{ steps.target.outputs.distribution }}" \
+            --output target \
+            --core-commit "${{ steps.core.outputs.sha }}" \
+            --check
+          git -C target diff --check
+          git -C target status --short --branch
+          git -C target diff --stat
+          git -C target diff -- CORE_BASELINE.json
+
+      - name: Commit and push sync branch
+        if: steps.freshness.outputs.current != 'true'
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C target config user.name "lean-poc-control-plane[bot]"
+          git -C target config user.email "noreply@github.com"
+          git -C target add -A
+          git -C target diff --cached --check
+          if git -C target diff --cached --quiet; then
+            echo "Core sync produced no changes after stale check." >&2
+            exit 2
+          fi
+          git -C target commit -m "Sync Lean Core to ${{ steps.core.outputs.sha }}"
+          git -C target push origin "HEAD:${{ steps.branch.outputs.name }}"
+          echo "commit=$(git -C target rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create consumer sync PR
+        if: steps.freshness.outputs.current != 'true'
+        id: pr
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.target-token.outputs.token }}
+          TARGET_REPOSITORY: ${{ steps.request.outputs.target_repository }}
+          BASE_BRANCH: ${{ steps.target.outputs.default_branch }}
+          SYNC_BRANCH: ${{ steps.branch.outputs.name }}
+          CORE_SHA: ${{ steps.core.outputs.sha }}
+          CORE_VERSION: ${{ steps.core.outputs.version }}
+          PREVIOUS_CORE_SHA: ${{ steps.target.outputs.previous_core_commit }}
+          REQUEST_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          pr_url="$(gh pr create \
+            --repo "$TARGET_REPOSITORY" \
+            --base "$BASE_BRANCH" \
+            --head "$SYNC_BRANCH" \
+            --title "Sync Lean Core to ${CORE_SHA:0:12}" \
+            --body "## Summary
+
+- sync the Core-managed greenfield overlay from \`$PREVIOUS_CORE_SHA\` to accepted Core \`$CORE_SHA\` (v$CORE_VERSION)
+- refresh exact managed-path provenance in \`CORE_BASELINE.json\`
+- preserve consumer-owned files and refuse unsafe Core-managed drift
+
+## Evidence
+
+- pre-sync Core baseline integrity passed
+- canonical Core sync preview/apply completed without unsafe states
+- post-sync baseline integrity and strict current-Core check passed
+- created by control-plane request #$REQUEST_NUMBER
+
+Merge remains an explicit human decision.")"
+          echo "url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Observe consumer PR CI
+        if: steps.freshness.outputs.current != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.target-token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: |
+          gh pr checks "$PR_URL" --watch --fail-fast
+
+      - name: Report already-current consumer
+        if: success() && steps.freshness.outputs.current == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TARGET_REPOSITORY: ${{ steps.request.outputs.target_repository }}
+          CORE_SHA: ${{ steps.core.outputs.sha }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Core sync not needed: \`$TARGET_REPOSITORY\` already matches accepted Core \`$CORE_SHA\`."
+          gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+
+      - name: Report successful Core sync
+        if: success() && steps.freshness.outputs.current != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TARGET_REPOSITORY: ${{ steps.request.outputs.target_repository }}
+          CORE_SHA: ${{ steps.core.outputs.sha }}
+          TARGET_BRANCH: ${{ steps.branch.outputs.name }}
+          TARGET_PR: ${{ steps.pr.outputs.url }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Core sync PR is ready for human review: \`$TARGET_REPOSITORY\` branch \`$TARGET_BRANCH\` → accepted Core \`$CORE_SHA\`. PR: $TARGET_PR. Consumer PR CI is green; merge is not implied."
+          gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+
+      - name: Report failed Core sync
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Remote Core sync failed or was blocked by safety checks. No target merge or successful synchronization is implied. Inspect this workflow run before retrying."
