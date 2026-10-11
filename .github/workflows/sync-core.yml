@@ -88,8 +88,6 @@ jobs:
       - name: Validate target Core consumer
         id: target
         shell: bash
-        env:
-          EXPECTED_REPOSITORY: ${{ steps.request.outputs.target_repository }}
         run: |
           python - <<'PY'
           import json
@@ -234,25 +232,25 @@ jobs:
           REQUEST_NUMBER: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
+          body_file="$RUNNER_TEMP/core-sync-pr.md"
+          cat > "$body_file" <<EOF
+          ## Summary
+          - sync the Core-managed greenfield overlay from \`$PREVIOUS_CORE_SHA\` to accepted Core \`$CORE_SHA\` (v$CORE_VERSION)
+          - refresh exact managed-path provenance in \`CORE_BASELINE.json\`
+          - preserve consumer-owned files and refuse unsafe Core-managed drift
+          ## Evidence
+          - pre-sync Core baseline integrity passed
+          - canonical Core sync preview/apply completed without unsafe states
+          - post-sync baseline integrity and strict current-Core check passed
+          - created by control-plane request #$REQUEST_NUMBER
+          Merge remains an explicit human decision.
+          EOF
           pr_url="$(gh pr create \
             --repo "$TARGET_REPOSITORY" \
             --base "$BASE_BRANCH" \
             --head "$SYNC_BRANCH" \
             --title "Sync Lean Core to ${CORE_SHA:0:12}" \
-            --body "## Summary
-
-- sync the Core-managed greenfield overlay from \`$PREVIOUS_CORE_SHA\` to accepted Core \`$CORE_SHA\` (v$CORE_VERSION)
-- refresh exact managed-path provenance in \`CORE_BASELINE.json\`
-- preserve consumer-owned files and refuse unsafe Core-managed drift
-
-## Evidence
-
-- pre-sync Core baseline integrity passed
-- canonical Core sync preview/apply completed without unsafe states
-- post-sync baseline integrity and strict current-Core check passed
-- created by control-plane request #$REQUEST_NUMBER
-
-Merge remains an explicit human decision.")"
+            --body-file "$body_file")"
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
 
       - name: Observe consumer PR CI
