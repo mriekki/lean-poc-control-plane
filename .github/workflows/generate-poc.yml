@@ -150,7 +150,7 @@ jobs:
           git -C "$target" config user.name "lean-poc-control-plane[bot]"
           git -C "$target" config user.email "noreply@github.com"
           git -C "$target" add -A
-          git -C "$target" diff --cached --check
+          python tools/check_staged_diff.py --root "$target"
 
           if git -C "$target" diff --cached --quiet; then
             echo "Generated publication produced no changes." >&2
