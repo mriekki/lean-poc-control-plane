@@ -1,6 +1,6 @@
 # Control Plane Setup
 
-This repository is the public orchestration surface for multi-owner Lean POC generation and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`; Core remains private in `mriekki/lean-agentic-core`.
+This repository is the public orchestration surface for multi-owner Lean POC generation and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`; Core remains private in `mriekki/lean-agentic-core`; reusable deployment mechanics remain private in `mriekki/lean-poc-deployment-kit`.
 
 Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface. Generated consumers may also configure this repository as their remote `/core-sync` provider so a developer does not need a local Core clone just to receive an accepted Core update.
 
@@ -47,11 +47,13 @@ When Pull requests or Checks permissions are added to an existing App installati
 
 For a zero-extra-step future POC flow, install the App on all repositories in each approved developer account. Each workflow still mints tokens scoped to the exact repositories required by that run:
 
-- generation source token: only `mriekki/lean-poc-bootstrap` and `mriekki/lean-agentic-core`;
+- generation source token: `mriekki/lean-poc-bootstrap`, `mriekki/lean-agentic-core`, and `mriekki/lean-poc-deployment-kit`;
 - Core-sync source token: only `mriekki/lean-agentic-core`;
 - target token: only the requested `owner/repository`.
 
-If an account prefers selecting repositories instead of all repositories, every newly created POC repo must be added to the App installation before generation or remote Core sync.
+The generation workflow does not check out Deployment Kit when `generation.deploymentKit.enabled=false`; including the repository in the short-lived source token scope only makes the exact pinned checkout available when the approved manifest enables it.
+
+If an account prefers selecting repositories instead of all repositories, every newly created POC repo must be added to the App installation before generation or remote Core sync. The Mark-owned App installation must also continue to include the private Bootstrap, Core, and Deployment Kit source repositories.
 
 ## Control-plane Actions configuration
 
@@ -75,11 +77,13 @@ After discovery and manifest approval:
 4. ChatGPT opens a public issue here with title `[generate-poc] owner/repository` and an empty body.
 5. The request author must equal the target owner and must appear in `config/allowed-owners.json`.
 6. The workflow obtains repository-scoped GitHub App installation tokens.
-7. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, recipe/catalog contract, and exact Core commit.
-8. The deterministic generator replaces only the approved seed state with the generated workspace baseline.
-9. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
+7. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, recipe/catalog contract, exact Core commit, and optional exact Deployment Kit repository/commit/distribution.
+8. The workflow checks out the exact manifest-pinned Core source and, only when enabled, the exact manifest-pinned Deployment Kit source.
+9. The deterministic generator receives those exact source paths and replaces only the approved seed state with the generated workspace baseline.
+10. Before publication, the workflow validates Core provenance and, when enabled, `DEPLOYMENT_BASELINE.json` repository/commit/distribution/managed-path provenance plus the generated Deployment Kit hash checker. The disabled case rejects unexpected Deployment Kit provenance.
+11. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
 
-A missing/inaccessible target repository or a failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
+A missing/inaccessible target or required source repository, a source commit mismatch, or a failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation, use another Deployment Kit commit/distribution, or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
 
 ## Remote Core-sync request contract
 

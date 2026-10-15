@@ -123,6 +123,21 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)
 
+    def test_generation_workflow_passes_exact_deployment_kit_source_when_enabled(self) -> None:
+        workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        self.assertIn("lean-poc-deployment-kit", workflow)
+        self.assertIn("Checkout pinned Deployment Kit source", workflow)
+        self.assertIn("if: steps.manifest.outputs.deployment_kit_enabled == 'true'", workflow)
+        self.assertIn("repository: ${{ steps.manifest.outputs.deployment_kit_repository }}", workflow)
+        self.assertIn("ref: ${{ steps.manifest.outputs.deployment_kit_commit }}", workflow)
+        self.assertIn("--deployment-kit-path deployment-kit", workflow)
+        self.assertIn("deployment_kit_distribution", workflow)
+        self.assertIn("DEPLOYMENT_BASELINE.json", workflow)
+        self.assertIn("check-deployment-baseline.py", workflow)
+        self.assertIn("Deployment Kit is disabled but DEPLOYMENT_BASELINE.json", workflow)
+        self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn("LEAN_CORE_READ_TOKEN", workflow)
+
     def test_core_sync_workflow_is_scoped_and_non_force(self) -> None:
         workflow = (ROOT / ".github/workflows/sync-core.yml").read_text(encoding="utf-8")
         self.assertIn("startsWith(github.event.issue.title, '[sync-core] ')", workflow)
