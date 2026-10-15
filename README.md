@@ -9,10 +9,11 @@ The reusable engineering platform remains private and Mark-owned:
 - `mriekki/lean-agentic-core`
 - `mriekki/lean-poc-bootstrap`
 - `mriekki/lean-workspace-adoption-kit`
+- `mriekki/lean-poc-deployment-kit`
 
 Each developer owns their own POC repositories. This public control plane contains only request/orchestration code; it must not contain private POC product definitions, GitHub App private keys, personal access tokens, or other credentials.
 
-Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface. Core consumers may also use it as a configured remote `/core-sync` provider when no safe local Core checkout is available. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic generation; Lean Agentic Core remains authoritative for reusable synchronization behavior; this repository owns secure cross-account orchestration and publication.
+Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface. Core consumers may also use it as a configured remote `/core-sync` provider when no safe local Core checkout is available. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic generation; Lean Agentic Core remains authoritative for reusable synchronization behavior; Deployment Kit remains authoritative for reusable deployment mechanics; this repository owns secure cross-account orchestration and publication.
 
 ## Request model
 
@@ -36,10 +37,22 @@ The approved `POC_BOOTSTRAP.json` stays private in a generation target. `CORE_BA
 
 The workflows use short-lived GitHub App installation tokens scoped separately to:
 
-1. Mark-owned Bootstrap/Core source repositories as needed; and
+1. Mark-owned Bootstrap/Core/Deployment Kit source repositories as needed; and
 2. the single requested target POC repository.
 
 See `docs/SETUP.md` for GitHub App configuration and operating details.
+
+## GitHub-first generation
+
+The `[generate-poc]` workflow keeps the public request surface deliberately empty of private manifest data. After it reads and validates the approved private target manifest, it:
+
+1. checks out the exact manifest-pinned Lean Core commit;
+2. when `generation.deploymentKit.enabled=true`, conditionally checks out the exact manifest-pinned `mriekki/lean-poc-deployment-kit` commit using the same read-only source installation token;
+3. passes that checkout to Bootstrap's canonical `generate_snapshot.py --deployment-kit-path` integration;
+4. validates generated Core provenance and, when enabled, `DEPLOYMENT_BASELINE.json` plus the generated Deployment Kit hash checker before publication; and
+5. performs no Deployment Kit checkout and rejects unexpected Deployment Kit provenance when integration is disabled.
+
+Repository/commit mismatches or inaccessible required source repositories fail generation. There is no PAT fallback and no fallback to another Deployment Kit commit or distribution.
 
 ## Remote Core sync
 
@@ -63,6 +76,8 @@ Family Meal Planner is intentionally excluded from this generic remote path beca
 ## Proven path
 
 The GitHub App generation path has been exercised end to end for both a Mark-owned private target and a second developer-owned private target, including request validation, separate source/target installation tokens, deterministic generation, publication, and target default-branch CI.
+
+Exact Deployment Kit source checkout/provenance is integrated into that path but still requires the planned unrelated greenfield consumer proof before deployment support is promoted beyond `partial`.
 
 The remote Core-sync path must be proven end to end after its workflow is merged and the GitHub App has the additional Pull requests and Checks permissions documented in `docs/SETUP.md`.
 
