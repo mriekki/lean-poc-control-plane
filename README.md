@@ -4,16 +4,19 @@ Public, credential-isolated orchestration for GitHub-first Lean POC generation a
 
 ## Ownership model
 
-The reusable engineering platform remains private and Mark-owned:
+Canonical reusable engineering sources remain separately owned:
 
-- `mriekki/lean-agentic-core`
-- `mriekki/lean-poc-bootstrap`
-- `mriekki/lean-workspace-adoption-kit`
-- `mriekki/lean-poc-deployment-kit`
+- `mriekki/lean-agentic-core` — reusable workflow behavior and Core distribution;
+- `mriekki/lean-poc-bootstrap` — discovery, manifest/catalog contracts, and deterministic greenfield generation;
+- `mriekki/lean-poc-deployment-kit` — reusable deployment mechanics;
+- `mriekki/lean-workspace-adoption-kit` — existing-repository adoption behavior;
+- `mriekki/lean-platform` / public `@mriekki/lean` — exact accepted reusable-component assembly and consumer delivery.
 
 Each developer owns their own POC repositories. This public control plane contains only request/orchestration code; it must not contain private POC product definitions, GitHub App private keys, personal access tokens, or other credentials.
 
-This repository is the canonical ChatGPT remote-generation execution surface. Core consumers may also use it as a configured remote `/core-sync` provider when no safe local Core checkout is available. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic generation; Lean Agentic Core remains authoritative for reusable synchronization behavior; Deployment Kit remains authoritative for reusable deployment mechanics; this repository owns secure cross-account orchestration and publication.
+This repository is the canonical ChatGPT remote-generation execution surface. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic project/workspace generation. The public `@mriekki/lean` package is the normal reusable-asset delivery boundary for new generated POCs. This repository owns secure cross-account orchestration and publication.
+
+Existing Core consumers may also use this repository as a configured remote `/core-sync` provider when no safe local Core checkout is available. That workflow remains a separate existing-consumer compatibility path and does not participate in greenfield package acquisition.
 
 ## Request model
 
@@ -29,16 +32,19 @@ A remote Core-sync request is a public issue whose title contains only:
 [sync-core] owner/repository
 ```
 
-For both request types, the issue body must be empty. Request validation rejects any non-whitespace body so private product definitions, Core baseline details, source code, or secrets cannot be accidentally submitted through the public request surface.
+For both request types, the issue body must be empty. Request validation rejects any non-whitespace body so private product definitions, baseline details, source code, or secrets cannot be accidentally submitted through the public request surface.
 
 The request author must match the target owner and be present in `config/allowed-owners.json`. Foundational/platform repositories are not valid remote generation or generic remote Core-sync targets.
 
-The approved `POC_BOOTSTRAP.json` stays private in a generation target. `CORE_BASELINE.json` stays private in a Core-sync target. The workflow reads target-private metadata only after minting a GitHub App installation token scoped to that exact target repository.
+The approved `POC_BOOTSTRAP.json` stays private in a generation target. `CORE_BASELINE.json` stays private in a Core-sync target. The workflows read target-private metadata only after minting a GitHub App installation token scoped to that exact target repository.
 
-The workflows use short-lived GitHub App installation tokens scoped separately to:
+The generation workflow uses separate credentials/boundaries for:
 
-1. Mark-owned Bootstrap/Core/Deployment Kit source repositories as needed; and
-2. the single requested target POC repository.
+1. a short-lived GitHub App source token scoped only to private `mriekki/lean-poc-bootstrap`;
+2. public npm acquisition of the exact manifest-approved `@mriekki/lean` version;
+3. a short-lived GitHub App target token scoped only to the requested POC repository.
+
+The remote Core-sync workflow separately mints a source token scoped only to `mriekki/lean-agentic-core` plus its exact-target token.
 
 See `docs/SETUP.md` for GitHub App configuration and operating details.
 
@@ -46,13 +52,17 @@ See `docs/SETUP.md` for GitHub App configuration and operating details.
 
 The `[generate-poc]` workflow keeps the public request surface deliberately empty of private manifest data. After it reads and validates the approved private target manifest, it:
 
-1. checks out the exact manifest-pinned Lean Core commit;
-2. when `generation.deploymentKit.enabled=true`, conditionally checks out the exact manifest-pinned `mriekki/lean-poc-deployment-kit` commit using the same read-only source installation token;
-3. passes that checkout to Bootstrap's canonical `generate_snapshot.py --deployment-kit-path` integration;
-4. validates generated Core provenance and, when enabled, `DEPLOYMENT_BASELINE.json` plus the generated Deployment Kit hash checker before publication; and
-5. performs no Deployment Kit checkout and rejects unexpected Deployment Kit provenance when integration is disabled.
+1. validates schema-v2 `generation.lean` and receives exact package, version, `greenfield-poc` profile, and SHA-512 integrity from Bootstrap;
+2. downloads that exact public npm tarball with lifecycle scripts disabled;
+3. verifies the downloaded tarball against the approved SHA-512 integrity before generation;
+4. passes the exact tarball to Bootstrap's canonical `generate_snapshot.py --lean-tarball` path;
+5. lets the exact local package CLI perform whole-profile preflight/apply/check for reusable Core + Deployment assets;
+6. validates `LEAN_BASELINE.json`, component-native baselines, and the generated no-network managed-baseline checker; and
+7. publishes only the validated generated tree to the approved target repository without force-pushing.
 
-Repository/commit mismatches or inaccessible required source repositories fail generation. GitHub App installation tokens are the credential model; generation does not substitute another Deployment Kit commit or distribution.
+Normal greenfield generation does **not** check out private Core or Deployment Kit sources. Their exact accepted repository/commit/distribution provenance is assembled into `@mriekki/lean` upstream by `lean-platform` and recorded in the generated component-native baselines.
+
+A missing package version, integrity mismatch, invalid package/profile identity, reusable managed-path conflict, unavailable required target/source access, or failed generation is a stop condition. The workflow does not substitute another package version, component commit, or generation destination.
 
 ## Remote Core sync
 
@@ -77,6 +87,6 @@ Family Meal Planner is excluded from this generic remote path because it has doc
 
 The GitHub App generation path has been exercised end to end for both a Mark-owned private target and a second developer-owned private target, including request validation, separate source/target installation tokens, deterministic generation, publication, and target default-branch CI.
 
-Exact Deployment Kit source checkout/provenance is integrated into that path but still requires the planned unrelated greenfield consumer proof before deployment support is promoted beyond `partial`.
+The current greenfield path now uses exact public `@mriekki/lean` artifact delivery and retains Bootstrap's target/private-manifest safety boundary. Deployment support remains `partial` until the planned unrelated generated-consumer deploy/tear-down proof is completed through this package-based path.
 
 The remote Core-sync path remains subject to its documented end-to-end proof and GitHub App Pull requests/Checks permissions in `docs/SETUP.md`.

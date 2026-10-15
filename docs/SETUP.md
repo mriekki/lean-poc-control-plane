@@ -1,6 +1,6 @@
 # Control Plane Setup
 
-This repository is the public orchestration surface for multi-owner Lean POC generation and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`; Core remains private in `mriekki/lean-agentic-core`; reusable deployment mechanics remain private in `mriekki/lean-poc-deployment-kit`.
+This repository is the public orchestration surface for multi-owner Lean POC generation and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`. Core and Deployment Kit remain canonical private source repositories, while the public `@mriekki/lean` package is the normal reusable-asset delivery boundary for new generated POCs.
 
 This repository is the canonical ChatGPT remote-generation execution surface. Generated consumers may also configure it as their remote `/core-sync` provider so a developer does not need a local Core clone just to receive an accepted Core update.
 
@@ -15,9 +15,9 @@ Public issue requests contain only a target repository name:
 
 The issue body must be empty. The request validator rejects any non-whitespace body.
 
-Private generation data stays in the target repository's `POC_BOOTSTRAP.json`. Private Core provenance stays in the target repository's `CORE_BASELINE.json`. Workflows read those target-private files only after minting a GitHub App installation token scoped to that exact repository.
+Private generation data stays in the target repository's `POC_BOOTSTRAP.json`. Private Core provenance for the separate remote sync path stays in the target repository's `CORE_BASELINE.json`. Workflows read those target-private files only after minting a GitHub App installation token scoped to that exact repository.
 
-Do not store personal access tokens in this repository. The credential model is one GitHub App private key stored as an Actions secret. The workflows mint short-lived installation tokens separately for source and target access.
+Do not store personal access tokens or npm publish tokens in this repository. The credential model is one GitHub App private key stored as an Actions secret. The workflows mint short-lived installation tokens separately for source and target access. Greenfield generation downloads the public npm package anonymously from the registry; npm publication credentials are neither required nor allowed here.
 
 ## GitHub App registration
 
@@ -29,10 +29,10 @@ Recommended identity:
 GitHub App name: Lean POC Generator
 ```
 
-Required repository permissions for generation plus remote Core sync:
+Required repository permissions for generation plus the existing remote Core-sync workflow:
 
-- **Contents: Read and write** — source checkout plus generated/synchronized target branch commit/push;
-- **Workflows: Read and write** — generated targets may contain `.github/workflows/ci.yml` and Core distributions must not be blocked from updating managed workflow files;
+- **Contents: Read and write** — read private Bootstrap/Core sources as separately scoped by each workflow and commit/push generated/synchronized target content;
+- **Workflows: Read and write** — generated targets may contain `.github/workflows/ci.yml` and Core distributions may update managed workflow files during remote Core sync;
 - **Pull requests: Read and write** — remote Core sync creates the consumer PR after publishing the sync branch;
 - **Checks: Read-only** — remote Core sync observes consumer PR checks before reporting success;
 - **Metadata: Read-only** — GitHub-required repository metadata access.
@@ -47,13 +47,13 @@ When Pull requests or Checks permissions are added to an existing App installati
 
 For a zero-extra-step POC flow, install the App on all repositories in each approved developer account. Each workflow still mints tokens scoped to the exact repositories required by that run:
 
-- generation source token: `mriekki/lean-poc-bootstrap`, `mriekki/lean-agentic-core`, and `mriekki/lean-poc-deployment-kit`;
+- generation source token: only `mriekki/lean-poc-bootstrap`;
 - Core-sync source token: only `mriekki/lean-agentic-core`;
 - target token: only the requested `owner/repository`.
 
-The generation workflow does not check out Deployment Kit when `generation.deploymentKit.enabled=false`; including the repository in the short-lived source token scope only makes the exact pinned checkout available when the approved manifest enables it.
+Greenfield generation no longer needs GitHub App read access to `mriekki/lean-poc-deployment-kit` or direct generation-time read access to `mriekki/lean-agentic-core`. The accepted Core + Deployment component snapshots are delivered by the exact public `@mriekki/lean` artifact selected in the approved manifest.
 
-If an account prefers selecting repositories instead of all repositories, every newly created POC repo must be added to the App installation before generation or remote Core sync. The Mark-owned App installation must also include the private Bootstrap, Core, and Deployment Kit source repositories.
+If an account prefers selecting repositories instead of all repositories, every newly created POC repo must be added to the App installation before generation or remote Core sync. The Mark-owned App installation must include private Bootstrap for generation and private Core for the separate remote Core-sync workflow.
 
 ## Control-plane Actions configuration
 
@@ -67,23 +67,27 @@ After creating the App:
 
 The private key should exist only in GitHub's App configuration and this repository's Actions secret store. Rotate it if exposure is suspected.
 
+No npm token is configured for generation. The workflow uses public registry reads only.
+
 ## Per-POC generation request contract
 
 After discovery and manifest approval:
 
 1. If ChatGPT cannot create repositories, the developer creates a **private, empty, uninitialized** target repository under their own GitHub account. Do not add a README, `.gitignore`, license, or application files.
 2. ChatGPT verifies the authenticated GitHub identity exactly matches the approved target owner and verifies the target is safe for first publication.
-3. ChatGPT writes only the approved `POC_BOOTSTRAP.json` seed to that target repository.
-4. ChatGPT opens a public issue here with title `[generate-poc] owner/repository` and an empty body.
-5. The request author must equal the target owner and must appear in `config/allowed-owners.json`.
-6. The workflow obtains repository-scoped GitHub App installation tokens.
-7. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, recipe/catalog contract, exact Core commit, and optional exact Deployment Kit repository/commit/distribution.
-8. The workflow checks out the exact manifest-pinned Core source and, only when enabled, the exact manifest-pinned Deployment Kit source.
-9. The deterministic generator receives those exact source paths and replaces only the approved seed state with the generated workspace baseline.
-10. Before publication, the workflow validates Core provenance and, when enabled, `DEPLOYMENT_BASELINE.json` repository/commit/distribution/managed-path provenance plus the generated Deployment Kit hash checker. The disabled case rejects unexpected Deployment Kit provenance.
-11. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
+3. ChatGPT writes only the approved schema-v2 `POC_BOOTSTRAP.json` seed to that target repository.
+4. The manifest pins exact Bootstrap provenance and one exact reusable distribution artifact under `generation.lean`: package `@mriekki/lean`, exact version, profile `greenfield-poc`, and exact SHA-512 npm integrity.
+5. ChatGPT opens a public issue here with title `[generate-poc] owner/repository` and an empty body.
+6. The request author must equal the target owner and must appear in `config/allowed-owners.json`.
+7. The workflow obtains a Bootstrap-only source token and an exact-target token.
+8. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, current protocol/catalog, and exact Lean package contract.
+9. The workflow downloads exactly `@mriekki/lean@<approved-version>` with npm lifecycle scripts disabled and verifies the downloaded tarball against the approved SHA-512 integrity.
+10. The deterministic generator receives that exact tarball through `generate_snapshot.py --lean-tarball`; Bootstrap/package logic performs whole-profile preflight/apply/check and writes `LEAN_BASELINE.json`, `CORE_BASELINE.json`, and `DEPLOYMENT_BASELINE.json`.
+11. Before publication, the workflow compiles generated tools, runs the generated no-network managed-baseline checker, confirms the generated manifest still carries the approved package/version/profile/integrity, and confirms the umbrella baseline identifies the expected `core` + `deployment` components.
+12. The workflow replaces only the approved seed state, verifies the staged diff, commits without force, and pushes the generated baseline.
+13. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
 
-A missing/inaccessible target or required source repository, a source commit mismatch, or a failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation, use another Deployment Kit commit/distribution, or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
+A missing/inaccessible target or Bootstrap repository, unavailable exact npm package, package integrity mismatch, invalid package/profile identity, managed-path conflict/drift, failed generator/package check, or failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation, choose another package version/component commit, or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
 
 ## Remote Core-sync request contract
 
@@ -94,6 +98,8 @@ A generated/self-contained consumer may configure the generic Core `/core-sync` 
 ```
 
 with an empty body.
+
+This existing-consumer workflow is separate from greenfield package acquisition. It remains available for consumers that still use the Core-specific sync contract.
 
 The remote workflow then:
 

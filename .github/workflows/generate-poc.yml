@@ -25,6 +25,11 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
       - name: Validate public request envelope
         id: request
         shell: bash
@@ -33,17 +38,14 @@ jobs:
             --event "$GITHUB_EVENT_PATH" \
             --allowed-owners config/allowed-owners.json
 
-      - name: Create source installation token
+      - name: Create Bootstrap source installation token
         id: source-token
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: mriekki
-          repositories: |
-            lean-poc-bootstrap
-            lean-agentic-core
-            lean-poc-deployment-kit
+          repositories: lean-poc-bootstrap
           permission-contents: read
 
       - name: Create target installation token
@@ -97,86 +99,119 @@ jobs:
             --expected-target-owner "${{ steps.request.outputs.target_owner }}" \
             --allowed-target-owner "${{ steps.request.outputs.target_owner }}"
 
-      - name: Checkout pinned Lean Core source
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ steps.manifest.outputs.core_repository }}
-          ref: ${{ steps.manifest.outputs.core_commit }}
-          token: ${{ steps.source-token.outputs.token }}
-          path: core
+      - name: Acquire exact Lean package artifact
+        id: lean-package
+        shell: bash
+        env:
+          LEAN_PACKAGE: ${{ steps.manifest.outputs.lean_package }}
+          LEAN_VERSION: ${{ steps.manifest.outputs.lean_version }}
+        run: |
+          set -euo pipefail
+          package_dir="$RUNNER_TEMP/lean-package"
+          pack_json="$RUNNER_TEMP/lean-pack.json"
+          mkdir -p "$package_dir"
 
-      - name: Checkout pinned Deployment Kit source
-        if: steps.manifest.outputs.deployment_kit_enabled == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ steps.manifest.outputs.deployment_kit_repository }}
-          ref: ${{ steps.manifest.outputs.deployment_kit_commit }}
-          token: ${{ steps.source-token.outputs.token }}
-          path: deployment-kit
+          npm pack "${LEAN_PACKAGE}@${LEAN_VERSION}" \
+            --json \
+            --ignore-scripts \
+            --pack-destination "$package_dir" > "$pack_json"
+
+          filename="$(node -e '
+            const fs = require("fs");
+            const result = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            if (!Array.isArray(result) || result.length !== 1 || !result[0].filename) process.exit(2);
+            process.stdout.write(result[0].filename);
+          ' "$pack_json")"
+          tarball="$package_dir/$filename"
+          if [ ! -f "$tarball" ]; then
+            echo "npm pack did not produce expected Lean tarball: $tarball" >&2
+            exit 2
+          fi
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+
+      - name: Verify approved Lean package integrity
+        shell: bash
+        env:
+          LEAN_TARBALL: ${{ steps.lean-package.outputs.tarball }}
+          LEAN_INTEGRITY: ${{ steps.manifest.outputs.lean_integrity }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path('bootstrap/tools').resolve()))
+          import lean_package_generation
+
+          lean_package_generation.verify_integrity(
+              Path(os.environ['LEAN_TARBALL']),
+              os.environ['LEAN_INTEGRITY'],
+          )
+          print('Lean package integrity verified')
+          PY
 
       - name: Generate deterministic workspace
         shell: bash
-        env:
-          DEPLOYMENT_KIT_ENABLED: ${{ steps.manifest.outputs.deployment_kit_enabled }}
         run: |
           set -euo pipefail
-          args=(
-            --manifest target/POC_BOOTSTRAP.json
-            --output "$RUNNER_TEMP/generated"
-            --core-path core
-          )
-          if [ "$DEPLOYMENT_KIT_ENABLED" = "true" ]; then
-            args+=(--deployment-kit-path deployment-kit)
-          fi
-          python bootstrap/tools/generate_snapshot.py "${args[@]}"
+          python bootstrap/tools/generate_snapshot.py \
+            --manifest target/POC_BOOTSTRAP.json \
+            --output "$RUNNER_TEMP/generated" \
+            --lean-tarball "${{ steps.lean-package.outputs.tarball }}"
 
       - name: Validate generated workspace
         shell: bash
         env:
-          DEPLOYMENT_KIT_ENABLED: ${{ steps.manifest.outputs.deployment_kit_enabled }}
-          DEPLOYMENT_KIT_REPOSITORY: ${{ steps.manifest.outputs.deployment_kit_repository }}
-          DEPLOYMENT_KIT_COMMIT: ${{ steps.manifest.outputs.deployment_kit_commit }}
-          DEPLOYMENT_KIT_DISTRIBUTION: ${{ steps.manifest.outputs.deployment_kit_distribution }}
+          LEAN_PACKAGE: ${{ steps.manifest.outputs.lean_package }}
+          LEAN_VERSION: ${{ steps.manifest.outputs.lean_version }}
+          LEAN_PROFILE: ${{ steps.manifest.outputs.lean_profile }}
+          LEAN_INTEGRITY: ${{ steps.manifest.outputs.lean_integrity }}
         run: |
           set -euo pipefail
           python -m compileall -q "$RUNNER_TEMP/generated/tools"
-          python "$RUNNER_TEMP/generated/tools/lean-core/check-core-baseline.py" \
-            --root "$RUNNER_TEMP/generated"
-          if [ "$DEPLOYMENT_KIT_ENABLED" = "true" ]; then
-            python "$RUNNER_TEMP/generated/tools/lean-deployment/check-deployment-baseline.py"
-          elif [ -e "$RUNNER_TEMP/generated/DEPLOYMENT_BASELINE.json" ]; then
-            echo "Deployment Kit is disabled but DEPLOYMENT_BASELINE.json was generated." >&2
-            exit 2
-          fi
+          python "$RUNNER_TEMP/generated/tools/lean-package/check-managed-baselines.py"
           python - <<'PY'
           import json
           import os
           from pathlib import Path
 
           root = Path(os.environ['RUNNER_TEMP']) / 'generated'
-          for name in ['POC_BOOTSTRAP.json', 'DEV_ENVIRONMENT.json', 'SCAFFOLD_PLAN.json', 'CORE_BASELINE.json']:
-              json.loads((root / name).read_text(encoding='utf-8'))
+          required = [
+              'POC_BOOTSTRAP.json',
+              'LEAN_BASELINE.json',
+              'CORE_BASELINE.json',
+              'DEPLOYMENT_BASELINE.json',
+              'DEV_ENVIRONMENT.json',
+              'SCAFFOLD_PLAN.json',
+          ]
+          documents = {}
+          for name in required:
+              documents[name] = json.loads((root / name).read_text(encoding='utf-8'))
               print('OK', name)
 
-          deployment_enabled = os.environ['DEPLOYMENT_KIT_ENABLED'] == 'true'
-          deployment_baseline = root / 'DEPLOYMENT_BASELINE.json'
-          if deployment_enabled:
-              baseline = json.loads(deployment_baseline.read_text(encoding='utf-8'))
-              expected = {
-                  'deploymentKitRepository': os.environ['DEPLOYMENT_KIT_REPOSITORY'],
-                  'deploymentKitCommit': os.environ['DEPLOYMENT_KIT_COMMIT'],
-                  'distribution': os.environ['DEPLOYMENT_KIT_DISTRIBUTION'],
-              }
-              for key, value in expected.items():
-                  if baseline.get(key) != value:
-                      raise SystemExit(
-                          f'DEPLOYMENT_BASELINE.json {key} mismatch: expected {value!r}, found {baseline.get(key)!r}'
-                      )
-              if not baseline.get('managedPaths'):
-                  raise SystemExit('DEPLOYMENT_BASELINE.json is missing managedPaths provenance')
-              print('OK DEPLOYMENT_BASELINE.json')
-          elif deployment_baseline.exists():
-              raise SystemExit('Deployment Kit is disabled but DEPLOYMENT_BASELINE.json exists')
+          manifest = documents['POC_BOOTSTRAP.json']
+          approved = manifest['generation']['lean']
+          expected = {
+              'package': os.environ['LEAN_PACKAGE'],
+              'version': os.environ['LEAN_VERSION'],
+              'profile': os.environ['LEAN_PROFILE'],
+              'integrity': os.environ['LEAN_INTEGRITY'],
+          }
+          if approved != expected:
+              raise SystemExit(f'Generated manifest Lean provenance mismatch: expected {expected!r}, found {approved!r}')
+
+          lean = documents['LEAN_BASELINE.json']
+          for key in ('package', 'version', 'profile'):
+              if lean.get(key) != expected[key]:
+                  raise SystemExit(
+                      f'LEAN_BASELINE.json {key} mismatch: expected {expected[key]!r}, found {lean.get(key)!r}'
+                  )
+          components = lean.get('components') or {}
+          if set(components) != {'core', 'deployment'}:
+              raise SystemExit(
+                  f'greenfield-poc Lean baseline must contain core and deployment components; found {sorted(components)}'
+              )
           PY
 
       - name: Publish generated baseline
