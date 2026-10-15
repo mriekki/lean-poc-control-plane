@@ -69,7 +69,7 @@ def _validate_component(
     component: str,
     lean_component: dict[str, Any],
     baseline_name: str,
-    global_seen: set[str],
+    global_seen: dict[str, tuple[str, str]],
 ) -> int:
     baseline = _staged_json(root, baseline_name)
     if baseline.get("schemaVersion") != 1:
@@ -113,15 +113,21 @@ def _validate_component(
             raise StagedBaselineError(f"Invalid managed hash in staged {baseline_name}: {relative}")
         if relative in local_seen:
             raise StagedBaselineError(f"Duplicate managed path in staged {baseline_name}: {relative}")
-        if relative in global_seen:
-            raise StagedBaselineError(f"Managed path is owned by multiple staged components: {relative}")
+        prior = global_seen.get(relative)
+        if prior is not None:
+            prior_component, prior_baseline = prior
+            raise StagedBaselineError(
+                f"Managed path is owned by multiple staged components: {relative}; "
+                f"{prior_component} ({prior_baseline}) and {component} ({baseline_name})"
+            )
         local_seen.add(relative)
-        global_seen.add(relative)
+        global_seen[relative] = (component, baseline_name)
 
         actual = hashlib.sha256(_staged_bytes(root, relative)).hexdigest()
         if actual != expected_hash:
             raise StagedBaselineError(
-                f"Staged managed file drift: {relative}; expected {expected_hash}, found {actual}"
+                f"Staged managed file drift in {baseline_name}: {relative}; "
+                f"expected {expected_hash}, found {actual}"
             )
         count += 1
 
@@ -146,7 +152,7 @@ def validate_staged_baselines(root: Path) -> int:
     if not isinstance(components, dict) or not components:
         raise StagedBaselineError("Staged LEAN_BASELINE.json components is missing or empty")
 
-    global_seen: set[str] = set()
+    global_seen: dict[str, tuple[str, str]] = {}
     total = 0
     for component, metadata in sorted(components.items()):
         if not isinstance(metadata, dict):
