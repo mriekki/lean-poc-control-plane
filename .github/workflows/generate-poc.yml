@@ -213,6 +213,7 @@ jobs:
                   f'greenfield-poc Lean baseline must contain core and deployment components; found {sorted(components)}'
               )
           PY
+          python tools/check_baseline_handoff.py generated --generated "$RUNNER_TEMP/generated"
 
       - name: Publish generated baseline
         id: publish
@@ -232,10 +233,12 @@ jobs:
 
           find "$target" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} +
           cp -a "$generated"/. "$target"/
+          python tools/check_baseline_handoff.py copied --generated "$generated" --target "$target"
 
           git -C "$target" config user.name "lean-poc-control-plane[bot]"
           git -C "$target" config user.email "noreply@github.com"
           git -C "$target" add -A
+          python tools/check_baseline_handoff.py staged --generated "$generated" --target "$target"
           python tools/check_staged_diff.py --root "$target"
           python tools/check_staged_baselines.py --root "$target"
 
