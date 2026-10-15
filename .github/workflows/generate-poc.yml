@@ -43,6 +43,7 @@ jobs:
           repositories: |
             lean-poc-bootstrap
             lean-agentic-core
+            lean-poc-deployment-kit
           permission-contents: read
 
       - name: Create target installation token
@@ -104,28 +105,78 @@ jobs:
           token: ${{ steps.source-token.outputs.token }}
           path: core
 
+      - name: Checkout pinned Deployment Kit source
+        if: steps.manifest.outputs.deployment_kit_enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.manifest.outputs.deployment_kit_repository }}
+          ref: ${{ steps.manifest.outputs.deployment_kit_commit }}
+          token: ${{ steps.source-token.outputs.token }}
+          path: deployment-kit
+
       - name: Generate deterministic workspace
         shell: bash
+        env:
+          DEPLOYMENT_KIT_ENABLED: ${{ steps.manifest.outputs.deployment_kit_enabled }}
         run: |
-          python bootstrap/tools/generate_snapshot.py \
-            --manifest target/POC_BOOTSTRAP.json \
-            --output "$RUNNER_TEMP/generated" \
+          set -euo pipefail
+          args=(
+            --manifest target/POC_BOOTSTRAP.json
+            --output "$RUNNER_TEMP/generated"
             --core-path core
+          )
+          if [ "$DEPLOYMENT_KIT_ENABLED" = "true" ]; then
+            args+=(--deployment-kit-path deployment-kit)
+          fi
+          python bootstrap/tools/generate_snapshot.py "${args[@]}"
 
       - name: Validate generated workspace
         shell: bash
+        env:
+          DEPLOYMENT_KIT_ENABLED: ${{ steps.manifest.outputs.deployment_kit_enabled }}
+          DEPLOYMENT_KIT_REPOSITORY: ${{ steps.manifest.outputs.deployment_kit_repository }}
+          DEPLOYMENT_KIT_COMMIT: ${{ steps.manifest.outputs.deployment_kit_commit }}
+          DEPLOYMENT_KIT_DISTRIBUTION: ${{ steps.manifest.outputs.deployment_kit_distribution }}
         run: |
+          set -euo pipefail
           python -m compileall -q "$RUNNER_TEMP/generated/tools"
           python "$RUNNER_TEMP/generated/tools/lean-core/check-core-baseline.py" \
             --root "$RUNNER_TEMP/generated"
+          if [ "$DEPLOYMENT_KIT_ENABLED" = "true" ]; then
+            python "$RUNNER_TEMP/generated/tools/lean-deployment/check-deployment-baseline.py"
+          elif [ -e "$RUNNER_TEMP/generated/DEPLOYMENT_BASELINE.json" ]; then
+            echo "Deployment Kit is disabled but DEPLOYMENT_BASELINE.json was generated." >&2
+            exit 2
+          fi
           python - <<'PY'
           import json
           import os
           from pathlib import Path
+
           root = Path(os.environ['RUNNER_TEMP']) / 'generated'
           for name in ['POC_BOOTSTRAP.json', 'DEV_ENVIRONMENT.json', 'SCAFFOLD_PLAN.json', 'CORE_BASELINE.json']:
               json.loads((root / name).read_text(encoding='utf-8'))
               print('OK', name)
+
+          deployment_enabled = os.environ['DEPLOYMENT_KIT_ENABLED'] == 'true'
+          deployment_baseline = root / 'DEPLOYMENT_BASELINE.json'
+          if deployment_enabled:
+              baseline = json.loads(deployment_baseline.read_text(encoding='utf-8'))
+              expected = {
+                  'deploymentKitRepository': os.environ['DEPLOYMENT_KIT_REPOSITORY'],
+                  'deploymentKitCommit': os.environ['DEPLOYMENT_KIT_COMMIT'],
+                  'distribution': os.environ['DEPLOYMENT_KIT_DISTRIBUTION'],
+              }
+              for key, value in expected.items():
+                  if baseline.get(key) != value:
+                      raise SystemExit(
+                          f'DEPLOYMENT_BASELINE.json {key} mismatch: expected {value!r}, found {baseline.get(key)!r}'
+                      )
+              if not baseline.get('managedPaths'):
+                  raise SystemExit('DEPLOYMENT_BASELINE.json is missing managedPaths provenance')
+              print('OK DEPLOYMENT_BASELINE.json')
+          elif deployment_baseline.exists():
+              raise SystemExit('Deployment Kit is disabled but DEPLOYMENT_BASELINE.json exists')
           PY
 
       - name: Publish generated baseline
