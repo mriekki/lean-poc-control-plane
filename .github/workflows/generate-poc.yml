@@ -237,6 +237,7 @@ jobs:
           git -C "$target" config user.email "noreply@github.com"
           git -C "$target" add -A
           python tools/check_staged_diff.py --root "$target"
+          python tools/check_staged_baselines.py --root "$target"
 
           if git -C "$target" diff --cached --quiet; then
             echo "Generated publication produced no changes." >&2
