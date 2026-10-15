@@ -13,7 +13,7 @@ The reusable engineering platform remains private and Mark-owned:
 
 Each developer owns their own POC repositories. This public control plane contains only request/orchestration code; it must not contain private POC product definitions, GitHub App private keys, personal access tokens, or other credentials.
 
-Bootstrap protocol v5 and later use this repository as the canonical ChatGPT remote-generation execution surface. Core consumers may also use it as a configured remote `/core-sync` provider when no safe local Core checkout is available. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic generation; Lean Agentic Core remains authoritative for reusable synchronization behavior; Deployment Kit remains authoritative for reusable deployment mechanics; this repository owns secure cross-account orchestration and publication.
+This repository is the canonical ChatGPT remote-generation execution surface. Core consumers may also use it as a configured remote `/core-sync` provider when no safe local Core checkout is available. Bootstrap remains authoritative for discovery, manifests, catalog/recipes, validation, and deterministic generation; Lean Agentic Core remains authoritative for reusable synchronization behavior; Deployment Kit remains authoritative for reusable deployment mechanics; this repository owns secure cross-account orchestration and publication.
 
 ## Request model
 
@@ -52,7 +52,7 @@ The `[generate-poc]` workflow keeps the public request surface deliberately empt
 4. validates generated Core provenance and, when enabled, `DEPLOYMENT_BASELINE.json` plus the generated Deployment Kit hash checker before publication; and
 5. performs no Deployment Kit checkout and rejects unexpected Deployment Kit provenance when integration is disabled.
 
-Repository/commit mismatches or inaccessible required source repositories fail generation. There is no PAT fallback and no fallback to another Deployment Kit commit or distribution.
+Repository/commit mismatches or inaccessible required source repositories fail generation. GitHub App installation tokens are the credential model; generation does not substitute another Deployment Kit commit or distribution.
 
 ## Remote Core sync
 
@@ -71,7 +71,7 @@ The `[sync-core]` workflow is intentionally narrower than arbitrary repository a
 
 If the consumer is already current, no branch or PR is created. Merge remains a human decision in the target repository.
 
-Family Meal Planner is intentionally excluded from this generic remote path because it has documented consumer-specific Core override handling. Its specialized synchronization contract remains authoritative until that exception is retired canonically.
+Family Meal Planner is excluded from this generic remote path because it has documented consumer-specific Core override handling; its specialized synchronization contract remains authoritative for that repository.
 
 ## Proven path
 
@@ -79,6 +79,4 @@ The GitHub App generation path has been exercised end to end for both a Mark-own
 
 Exact Deployment Kit source checkout/provenance is integrated into that path but still requires the planned unrelated greenfield consumer proof before deployment support is promoted beyond `partial`.
 
-The remote Core-sync path must be proven end to end after its workflow is merged and the GitHub App has the additional Pull requests and Checks permissions documented in `docs/SETUP.md`.
-
-The former Bootstrap v4 PAT-based workflow is legacy infrastructure and is retired when Bootstrap protocol v5 is accepted. Do not add personal access tokens to this control plane.
+The remote Core-sync path remains subject to its documented end-to-end proof and GitHub App Pull requests/Checks permissions in `docs/SETUP.md`.
