@@ -111,7 +111,7 @@ class RequestTests(unittest.TestCase):
             path.write_text(json.dumps({"schemaVersion": 1, "owners": ["mriekki", "Kyle-Example"]}), encoding="utf-8")
             self.assertEqual(request.load_allowed_owners(path), {"mriekki", "kyle-example"})
 
-    def test_generation_workflow_uses_github_app_tokens_and_private_seed_manifest(self) -> None:
+    def test_generation_workflow_uses_github_app_target_isolation_and_private_seed_manifest(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
         self.assertIn("actions/create-github-app-token@v3", workflow)
         self.assertIn("APP_PRIVATE_KEY", workflow)
@@ -120,23 +120,33 @@ class RequestTests(unittest.TestCase):
         self.assertIn("remote_generation.py validate-manifest", workflow)
         self.assertIn("generate_snapshot.py", workflow)
         self.assertIn("permission-workflows: write", workflow)
+        self.assertIn("repositories: lean-poc-bootstrap", workflow)
         self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)
 
-    def test_generation_workflow_passes_exact_deployment_kit_source_when_enabled(self) -> None:
+    def test_generation_workflow_uses_exact_public_lean_artifact(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
-        self.assertIn("lean-poc-deployment-kit", workflow)
-        self.assertIn("Checkout pinned Deployment Kit source", workflow)
-        self.assertIn("if: steps.manifest.outputs.deployment_kit_enabled == 'true'", workflow)
-        self.assertIn("repository: ${{ steps.manifest.outputs.deployment_kit_repository }}", workflow)
-        self.assertIn("ref: ${{ steps.manifest.outputs.deployment_kit_commit }}", workflow)
-        self.assertIn("--deployment-kit-path deployment-kit", workflow)
-        self.assertIn("deployment_kit_distribution", workflow)
+        self.assertIn("actions/setup-node@v6", workflow)
+        self.assertIn("steps.manifest.outputs.lean_package", workflow)
+        self.assertIn("steps.manifest.outputs.lean_version", workflow)
+        self.assertIn("steps.manifest.outputs.lean_profile", workflow)
+        self.assertIn("steps.manifest.outputs.lean_integrity", workflow)
+        self.assertIn('npm pack "${LEAN_PACKAGE}@${LEAN_VERSION}"', workflow)
+        self.assertIn("--ignore-scripts", workflow)
+        self.assertIn("lean_package_generation.verify_integrity", workflow)
+        self.assertIn("--lean-tarball", workflow)
+        self.assertIn("LEAN_BASELINE.json", workflow)
+        self.assertIn("check-managed-baselines.py", workflow)
+        self.assertIn("CORE_BASELINE.json", workflow)
         self.assertIn("DEPLOYMENT_BASELINE.json", workflow)
-        self.assertIn("check-deployment-baseline.py", workflow)
-        self.assertIn("Deployment Kit is disabled but DEPLOYMENT_BASELINE.json", workflow)
-        self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn("Checkout pinned Lean Core source", workflow)
+        self.assertNotIn("Checkout pinned Deployment Kit source", workflow)
+        self.assertNotIn("--core-path", workflow)
+        self.assertNotIn("--deployment-kit-path", workflow)
+        self.assertNotIn("lean-agentic-core", workflow)
+        self.assertNotIn("lean-poc-deployment-kit", workflow)
         self.assertNotIn("LEAN_CORE_READ_TOKEN", workflow)
+        self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
 
     def test_core_sync_workflow_is_scoped_and_non_force(self) -> None:
         workflow = (ROOT / ".github/workflows/sync-core.yml").read_text(encoding="utf-8")
