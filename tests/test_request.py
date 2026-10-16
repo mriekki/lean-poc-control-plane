@@ -171,6 +171,8 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("headRefOid", workflow)
         self.assertIn("CORE_BASELINE.json", workflow)
         self.assertIn("greenfield-workspace", workflow)
+        self.assertIn("Refusing direct Core sync for package-managed Lean consumer", workflow)
+        self.assertIn("LEAN_BASELINE.json is present. Use /lean-update", workflow)
         self.assertNotIn("LEAN_CORE_READ_TOKEN", workflow)
         self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)

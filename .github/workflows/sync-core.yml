@@ -95,6 +95,14 @@ jobs:
           import re
           from pathlib import Path
 
+          lean_baseline_path = Path('target/LEAN_BASELINE.json')
+          if lean_baseline_path.is_file():
+              raise SystemExit(
+                  'Refusing direct Core sync for package-managed Lean consumer: '
+                  'LEAN_BASELINE.json is present. Use /lean-update with an exact published '
+                  '@mriekki/lean package instead.'
+              )
+
           baseline_path = Path('target/CORE_BASELINE.json')
           if not baseline_path.is_file():
               raise SystemExit('Target is not a Core consumer: CORE_BASELINE.json is missing')
