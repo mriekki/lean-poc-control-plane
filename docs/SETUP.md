@@ -1,19 +1,21 @@
 # Control Plane Setup
 
-This repository is the public orchestration surface for multi-owner Lean POC generation and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`. Core and Deployment Kit remain canonical private source repositories, while the public `@mriekki/lean` package is the normal reusable-asset delivery boundary for new generated POCs.
+This repository is the public orchestration surface for multi-owner Lean POC generation, developer invitation/authorization, and remote Lean Core synchronization. Reusable product/discovery/generation logic remains private in `mriekki/lean-poc-bootstrap`. Core and Deployment Kit remain canonical private source repositories, while the public `@mriekki/lean` package is the normal reusable-asset delivery boundary for generated POCs.
 
-This repository is the canonical ChatGPT remote-generation execution surface. Generated consumers may also configure it as their remote `/core-sync` provider so a developer does not need a local Core clone just to receive an accepted Core update.
+This repository is the canonical ChatGPT remote-generation execution surface and the cross-account Lean developer authorization surface. Generated consumers may also configure it as their remote `/core-sync` provider so a developer does not need a local Core clone just to receive an accepted Core update.
 
 ## Security boundary
 
-Public issue requests contain only a target repository name:
+Public operational issues contain only safe identities:
 
 ```text
+[invite-lean] github-owner
+[revoke-lean] github-owner
 [generate-poc] owner/repository
 [sync-core] owner/repository
 ```
 
-The issue body must be empty. The request validator rejects any non-whitespace body.
+These issue bodies must be empty. Private POC definitions, baseline contents, source code, credentials, or secrets never belong in a Control Plane issue.
 
 Private generation data stays in the target repository's `POC_BOOTSTRAP.json`. Private Core provenance for the separate remote sync path stays in the target repository's `CORE_BASELINE.json`. Workflows read those target-private files only after minting a GitHub App installation token scoped to that exact repository.
 
@@ -37,16 +39,17 @@ Required repository permissions for generation plus the existing remote Core-syn
 - **Checks: Read-only** — remote Core sync observes consumer PR checks before reporting success;
 - **Metadata: Read-only** — GitHub-required repository metadata access.
 
-The control plane does not need target-repository Issues permission. It comments on its own public request issue using that workflow run's normal `GITHUB_TOKEN`.
+The control plane does not need target-repository Issues permission. It comments on its own public invitation/generation/sync issues using that workflow run's normal `GITHUB_TOKEN`.
 
-The App does not need webhooks for this design; generation and Core sync are initiated by this repository's issue-triggered Actions workflows.
+The App does not need webhooks for this design; onboarding, generation, and Core sync are initiated by this repository's issue-triggered Actions workflows.
 
-When Pull requests or Checks permissions are added to an existing App installation, GitHub may require the installation owner to approve the expanded permissions. Confirm the installation is active for each allowlisted developer before relying on remote Core sync.
+When Pull requests or Checks permissions are added to an existing App installation, GitHub may require the installation owner to approve the expanded permissions. Confirm the installation is active for each developer before relying on remote Core sync.
 
 ## Installations
 
 For a zero-extra-step POC flow, install the App on all repositories in each approved developer account. Each workflow still mints tokens scoped to the exact repositories required by that run:
 
+- invitation/doctor check: the invited developer's App installation;
 - generation source token: only `mriekki/lean-poc-bootstrap`;
 - Core-sync source token: only `mriekki/lean-agentic-core`;
 - target token: only the requested `owner/repository`.
@@ -63,11 +66,50 @@ After creating the App:
 2. Generate a GitHub App private key.
 3. Store the complete private-key value as Actions repository secret `APP_PRIVATE_KEY`.
 4. Do not commit either credential to Git.
-5. Add each approved developer's GitHub login to `config/allowed-owners.json` through the normal PR/CI path.
+5. Optionally set Actions variable `APP_INSTALL_URL` to the actual Lean POC Generator installation URL so invitation comments provide a direct install link. If absent, onboarding falls back to these setup instructions.
+6. Keep `config/developers.json`, `config/invitation-policy.json`, and its generated compatibility projection `config/allowed-owners.json` valid under CI.
 
 The private key should exist only in GitHub's App configuration and this repository's Actions secret store. Rotate it if exposure is suspected.
 
 No npm token is configured for generation. The workflow uses public registry reads only.
+
+## Developer invitation contract
+
+Do not manually add a normal developer to `config/allowed-owners.json` as the onboarding mechanism. The invitation workflow owns normal cross-account activation.
+
+An ACTIVE admin creates one empty-body public issue:
+
+```text
+[invite-lean] github-owner
+```
+
+That issue creation is the meaningful administrative authorization gate. The issue becomes the one onboarding URL.
+
+The invited developer installs/approves the Lean POC Generator App and comments exactly:
+
+```text
+/accept-lean
+```
+
+The claim workflow verifies the exact GitHub identity, invitation lifetime from `config/invitation-policy.json`, and GitHub App installation before updating `config/developers.json` and the compatibility `config/allowed-owners.json` projection.
+
+The invited owner can decline with:
+
+```text
+/decline-lean
+```
+
+Unclaimed invitations expire automatically after the configured claim window. Decline/expiration make no authorization change.
+
+After activation, the developer or an admin can comment:
+
+```text
+/lean-doctor
+```
+
+The doctor verifies ACTIVE registry state, GitHub App installation, and the SHA-256-pinned public ChatGPT bootstrap contract at `mriekki/lean-platform/chatgpt/current.json`.
+
+See `docs/INVITATIONS.md` for full lifecycle and revocation rules.
 
 ## Per-POC generation request contract
 
@@ -78,7 +120,7 @@ After discovery and manifest approval:
 3. ChatGPT writes only the approved schema-v2 `POC_BOOTSTRAP.json` seed to that target repository.
 4. The manifest pins exact Bootstrap provenance and one exact reusable distribution artifact under `generation.lean`: package `@mriekki/lean`, exact version, profile `greenfield-poc`, and exact SHA-512 npm integrity.
 5. ChatGPT opens a public issue here with title `[generate-poc] owner/repository` and an empty body.
-6. The request author must equal the target owner and must appear in `config/allowed-owners.json`.
+6. The request author must equal the target owner and must be ACTIVE with generation authorization. The current workflow consumes the compatibility projection in `config/allowed-owners.json`, which is validated against `config/developers.json` by CI.
 7. The workflow obtains a Bootstrap-only source token and an exact-target token.
 8. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, current protocol/catalog, and exact Lean package contract.
 9. The workflow downloads exactly `@mriekki/lean@<approved-version>` with npm lifecycle scripts disabled and verifies the downloaded tarball against the approved SHA-512 integrity.
@@ -103,7 +145,7 @@ This existing-consumer workflow is separate from greenfield package acquisition.
 
 The remote workflow then:
 
-1. verifies the request author equals the target owner and the owner is allowlisted;
+1. verifies the request author equals the target owner and the owner is currently authorized by the compatibility projection derived from the developer registry;
 2. refuses foundational/platform repositories, including Family Meal Planner's specialized consumer path;
 3. mints a read-only source token scoped only to `mriekki/lean-agentic-core`;
 4. mints a target token scoped only to the requested consumer;
