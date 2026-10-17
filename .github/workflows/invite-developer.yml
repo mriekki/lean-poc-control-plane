@@ -1,0 +1,72 @@
+name: Invite Lean Developer
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  invite:
+    if: startsWith(github.event.issue.title, '[invite-lean] ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate invitation
+        id: invite
+        run: |
+          python tools/invitation.py extract-invite \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json
+
+      - name: Read invitation policy
+        id: policy
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          policy = json.loads(Path('config/invitation-policy.json').read_text(encoding='utf-8'))
+          print(f"expiry_days={policy['expiryDays']}")
+          PY
+
+      - name: Publish onboarding instructions
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.invite.outputs.target_owner }}
+          EXPIRY_DAYS: ${{ steps.policy.outputs.expiry_days }}
+          APP_INSTALL_URL: ${{ vars.APP_INSTALL_URL }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            const expiry = process.env.EXPIRY_DAYS;
+            const appUrl = process.env.APP_INSTALL_URL ||
+              'https://github.com/mriekki/lean-poc-control-plane/blob/main/docs/SETUP.md#installations';
+            const contractUrl =
+              'https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md';
+            const body = [
+              `LEAN INVITATION — PENDING`,
+              ``,
+              `Invited GitHub owner: @${target}`,
+              `Claim window: ${expiry} days`,
+              ``,
+              `1. Install/approve the Lean POC Generator GitHub App: ${appUrl}`,
+              `2. While signed in as @${target}, comment exactly: \`/accept-lean\``,
+              `3. After activation, comment \`/lean-doctor\` to verify readiness.`,
+              `4. Then use the public ChatGPT bootstrap entrypoint: ${contractUrl}`,
+              ``,
+              `To decline instead, comment \`/decline-lean\`.`,
+              `Knowing this issue URL does not grant access; claim identity and the GitHub App installation are verified before activation.`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

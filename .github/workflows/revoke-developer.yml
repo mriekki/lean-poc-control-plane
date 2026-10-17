@@ -1,0 +1,82 @@
+name: Revoke Lean Developer
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: lean-developer-registry
+  cancel-in-progress: false
+
+jobs:
+  revoke:
+    if: startsWith(github.event.issue.title, '[revoke-lean] ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate revocation authorization
+        id: revoke
+        run: |
+          python tools/invitation.py extract-revoke \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json
+
+      - name: Revoke future Control Plane authorization
+        run: |
+          python tools/invitation.py revoke \
+            --registry config/developers.json \
+            --allowed-owners config/allowed-owners.json \
+            --owner "${{ steps.revoke.outputs.target_owner }}" \
+            --revoked-by "${{ steps.revoke.outputs.request_author }}" \
+            --issue-number "${{ steps.revoke.outputs.issue_number }}"
+          python tools/invitation.py validate-config \
+            --registry config/developers.json \
+            --allowed-owners config/allowed-owners.json
+
+      - name: Commit operational registry update
+        env:
+          TARGET_OWNER: ${{ steps.revoke.outputs.target_owner }}
+        run: |
+          git config user.name "lean-poc-control-plane[bot]"
+          git config user.email "noreply@github.com"
+          git add config/developers.json config/allowed-owners.json
+          git commit -m "Revoke Lean developer ${TARGET_OWNER}"
+          git push origin HEAD:main
+
+      - name: Report revocation
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.revoke.outputs.target_owner }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            const body = [
+              'LEAN AUTHORIZATION — REVOKED',
+              '',
+              `Future Control Plane authorization for @${target} has been revoked.`,
+              '',
+              'This does not delete, transfer, disable, or mutate any repository the developer already owns.',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              state_reason: 'completed',
+            });
