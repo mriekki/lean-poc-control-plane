@@ -158,6 +158,16 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("LEAN_CORE_READ_TOKEN", workflow)
         self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
 
+    def test_generation_docs_distinguish_approved_choice_from_resolved_integrity(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        setup = (ROOT / "docs" / "SETUP.md").read_text(encoding="utf-8")
+        self.assertIn('generation.lean.integrity: "registry"', readme)
+        self.assertIn("Humans approve the exact package/version/profile, not npm hash plumbing", readme)
+        self.assertIn("resolved exact SHA-512 integrity", readme)
+        self.assertNotIn("approved SHA-512 integrity", readme)
+        self.assertIn('integrity: "registry"', setup)
+        self.assertIn("Humans are not expected to discover or paste npm integrity metadata", setup)
+
     def test_core_sync_workflow_is_scoped_and_non_force(self) -> None:
         workflow = (ROOT / ".github/workflows/sync-core.yml").read_text(encoding="utf-8")
         self.assertIn("startsWith(github.event.issue.title, '[sync-core] ')", workflow)
