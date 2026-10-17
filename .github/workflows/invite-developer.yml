@@ -1,0 +1,57 @@
+name: Invite Lean Developer
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  invite:
+    if: startsWith(github.event.issue.title, '[invite-lean] ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate invitation
+        id: invite
+        run: |
+          python tools/invitation.py extract-invite \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json
+
+      - name: Publish onboarding instructions
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.invite.outputs.target_owner }}
+          APP_INSTALL_URL: ${{ vars.APP_INSTALL_URL }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            const appUrl = process.env.APP_INSTALL_URL ||
+              'https://github.com/mriekki/lean-poc-control-plane/blob/main/docs/SETUP.md#installations';
+            const contractUrl =
+              'https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md';
+            const body = [
+              `LEAN INVITATION — PENDING`,
+              ``,
+              `Invited GitHub owner: @${target}`,
+              ``,
+              `1. Install/approve the Lean POC Generator GitHub App: ${appUrl}`,
+              `2. While signed in as @${target}, comment exactly: \`/accept-lean\``,
+              `3. After activation, comment \`/lean-doctor\` to verify readiness.`,
+              `4. Then use the public ChatGPT bootstrap entrypoint: ${contractUrl}`,
+              ``,
+              `Knowing this issue URL does not grant access; claim identity and the GitHub App installation are verified before activation.`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "developers": [
+    {
+      "githubOwner": "mriekki",
+      "status": "active",
+      "role": "admin",
+      "contractChannel": "stable",
+      "capabilities": [
+        "generate-poc",
+        "sync-core",
+        "invite-developer",
+        "revoke-developer"
+      ]
+    },
+    {
+      "githubOwner": "kyleriekki-89",
+      "status": "active",
+      "role": "poc-author",
+      "contractChannel": "stable",
+      "capabilities": [
+        "generate-poc",
+        "sync-core"
+      ]
+    }
+  ]
+}

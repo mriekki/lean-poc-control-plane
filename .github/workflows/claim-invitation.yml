@@ -1,0 +1,126 @@
+name: Claim Lean Invitation
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: lean-developer-registry
+  cancel-in-progress: false
+
+jobs:
+  claim:
+    if: >-
+      startsWith(github.event.issue.title, '[invite-lean] ') &&
+      github.event.comment.body == '/accept-lean'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate claim identity
+        id: claim
+        run: |
+          python tools/invitation.py extract-claim \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json
+
+      - name: Verify GitHub App installation
+        id: app-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ steps.claim.outputs.target_owner }}
+          permission-contents: read
+
+      - name: Explain missing App installation
+        if: steps.app-token.outcome != 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              'LEAN INVITATION — INSTALLATION REQUIRED',
+              '',
+              'The GitHub identity claim matched, but the Lean POC Generator GitHub App installation could not be verified.',
+              '',
+              'Install/approve the App for this GitHub account, then comment `/accept-lean` again.',
+              'No developer authorization was activated.',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Activate developer
+        if: steps.app-token.outcome == 'success'
+        run: |
+          python tools/invitation.py activate \
+            --registry config/developers.json \
+            --allowed-owners config/allowed-owners.json \
+            --owner "${{ steps.claim.outputs.target_owner }}" \
+            --invited-by "${{ steps.claim.outputs.request_author }}" \
+            --issue-number "${{ steps.claim.outputs.issue_number }}"
+          python tools/invitation.py validate-config \
+            --registry config/developers.json \
+            --allowed-owners config/allowed-owners.json
+
+      - name: Commit operational registry update
+        if: steps.app-token.outcome == 'success'
+        env:
+          TARGET_OWNER: ${{ steps.claim.outputs.target_owner }}
+        run: |
+          git config user.name "lean-poc-control-plane[bot]"
+          git config user.email "noreply@github.com"
+          git add config/developers.json config/allowed-owners.json
+          if git diff --cached --quiet; then
+            echo "Registry already reflects the activation."
+          else
+            git commit -m "Activate Lean developer ${TARGET_OWNER}"
+            git push origin HEAD:main
+          fi
+
+      - name: Report active onboarding
+        if: steps.app-token.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.claim.outputs.target_owner }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            const start =
+              'https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md';
+            const body = [
+              'LEAN INVITATION — ACTIVE',
+              '',
+              `@${target} is now authorized for Lean POC generation.`,
+              '',
+              `Next: comment \`/lean-doctor\` on this issue.`,
+              `ChatGPT bootstrap entrypoint: ${start}`,
+              '',
+              'Existing repositories remain owned by their developer; activation grants future Control Plane authorization only.',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              state_reason: 'completed',
+            });
