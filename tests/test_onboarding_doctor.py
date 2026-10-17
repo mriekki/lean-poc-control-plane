@@ -107,6 +107,14 @@ class OnboardingDoctorTests(unittest.TestCase):
         values = onboarding_doctor.extract_request(event, self.registry)
         self.assertEqual(values["target_owner"], "kyleriekki-89")
 
+    def test_workflow_supports_standalone_open_and_comment_retry(self) -> None:
+        workflow = (ROOT / ".github" / "workflows" / "onboarding-doctor.yml").read_text(encoding="utf-8")
+        self.assertIn("issues:\n    types: [opened]", workflow)
+        self.assertIn("[lean-doctor] ", workflow)
+        self.assertIn("[invite-lean] ", workflow)
+        self.assertIn("python tools/onboarding_doctor.py extract", workflow)
+        self.assertIn("issue_number: Number(process.env.ISSUE_NUMBER)", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
