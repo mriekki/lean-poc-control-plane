@@ -91,11 +91,21 @@ A failed App check leaves the invitation pending and does not mutate authorizati
 
 ## Onboarding doctor
 
-After activation, the developer or an admin can comment:
+The doctor is onboarding/readiness evidence. It is not a per-POC discovery or generation prerequisite.
+
+For a newly activated developer, the existing invitation issue remains a valid doctor portal. The developer or an admin can comment:
 
 ```text
 /lean-doctor
 ```
+
+For an already-ACTIVE developer who has no invitation issue, the developer can open one empty-body public issue under their own GitHub identity:
+
+```text
+[lean-doctor] github-owner
+```
+
+An active admin may open the same issue for that developer. Opening the standalone doctor issue runs the check immediately. After fixing a failed prerequisite, the developer or an active admin can comment `/lean-doctor` on that same issue to retry.
 
 The doctor verifies:
 
@@ -110,7 +120,7 @@ The successful result is:
 READY FOR LEAN
 ```
 
-The developer then configures a ChatGPT coding Project once using the public bootstrap entrypoint and a small personal profile.
+The developer then configures a ChatGPT coding Project once using the public bootstrap entrypoint and a small personal profile. Normal `New POC:` discovery should not require another doctor run unless readiness is actually in doubt.
 
 ## Revoke flow
 

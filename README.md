@@ -28,7 +28,15 @@ An active admin authorizes onboarding by opening one empty-body issue:
 [invite-lean] github-owner
 ```
 
-The issue URL is the onboarding portal. The invited GitHub identity must claim it with `/accept-lean` while the invitation is still valid, and the workflow verifies the Lean POC Generator GitHub App installation before activating authorization. The invited owner may use `/decline-lean`; unclaimed invitations expire under `config/invitation-policy.json`. After activation, `/lean-doctor` verifies registry state, GitHub App installation, and the public Lean ChatGPT bootstrap contract.
+The issue URL is the onboarding portal. The invited GitHub identity must claim it with `/accept-lean` while the invitation is still valid, and the workflow verifies the Lean POC Generator GitHub App installation before activating authorization. The invited owner may use `/decline-lean`; unclaimed invitations expire under `config/invitation-policy.json`.
+
+After activation, the invitation issue can still be used with `/lean-doctor`. An already-ACTIVE developer who predates invitations can instead open one empty-body issue:
+
+```text
+[lean-doctor] github-owner
+```
+
+Opening that standalone issue runs the same readiness check immediately; the developer or an active admin can comment `/lean-doctor` on it to retry after fixing a prerequisite. The doctor verifies registry state, GitHub App installation, and the public Lean ChatGPT bootstrap contract. It is onboarding/readiness evidence, not a per-POC discovery requirement.
 
 Revocation uses one admin-authorized empty-body issue:
 
