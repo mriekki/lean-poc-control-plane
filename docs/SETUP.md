@@ -25,11 +25,20 @@ Do not store personal access tokens or npm publish tokens in this repository. Th
 
 Create one GitHub App owned by `mriekki` and configure it so it can be installed on approved developer accounts.
 
-Recommended identity:
+Recommended display identity:
 
 ```text
 GitHub App name: Lean POC Generator
 ```
+
+Keep GitHub's identity terms distinct:
+
+- **App name** is the human-facing registration name, for example `Lean POC Generator`.
+- **App slug** is GitHub's URL-safe App identifier. `actions/create-github-app-token` exposes it as `app-slug`.
+- **GitHub App bot username** is `<app-slug>[bot]`. This is the account identity that should appear as the author of generated commits when Git is configured correctly.
+- **App installation** is the App's authorization on an owner/account and selected repositories. The installation owner or installation UI label is not the bot username.
+
+The generation workflow resolves the actual `app-slug`, looks up `<app-slug>[bot]` to obtain its numeric user ID, and configures Git with the corresponding GitHub noreply address. Do not hard-code a guessed bot name such as `lean-poc-control-plane[bot]`; the registered App slug is authoritative.
 
 Required repository permissions for generation plus the existing remote Core-sync workflow:
 
@@ -118,15 +127,15 @@ After discovery and manifest approval:
 1. If ChatGPT cannot create repositories, the developer creates a **private, empty, uninitialized** target repository under their own GitHub account. Do not add a README, `.gitignore`, license, or application files.
 2. ChatGPT verifies the authenticated GitHub identity exactly matches the approved target owner and verifies the target is safe for first publication.
 3. ChatGPT writes only the approved schema-v2 `POC_BOOTSTRAP.json` seed to that target repository.
-4. The manifest pins exact Bootstrap provenance and one exact reusable distribution artifact under `generation.lean`: package `@mriekki/lean`, exact version, profile `greenfield-poc`, and exact SHA-512 npm integrity.
+4. The manifest pins exact Bootstrap provenance and one exact reusable distribution choice under `generation.lean`: package `@mriekki/lean`, exact version, profile `greenfield-poc`, and normally `integrity: "registry"`. An exact SHA-512 SRI remains valid when already supplied by trusted automation. Humans are not expected to discover or paste npm integrity metadata.
 5. ChatGPT opens a public issue here with title `[generate-poc] owner/repository` and an empty body.
 6. The request author must equal the target owner and must be ACTIVE with generation authorization. The current workflow consumes the compatibility projection in `config/allowed-owners.json`, which is validated against `config/developers.json` by CI.
 7. The workflow obtains a Bootstrap-only source token and an exact-target token.
-8. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, current protocol/catalog, and exact Lean package contract.
-9. The workflow downloads exactly `@mriekki/lean@<approved-version>` with npm lifecycle scripts disabled and verifies the downloaded tarball against the approved SHA-512 integrity.
-10. The deterministic generator receives that exact tarball through `generate_snapshot.py --lean-tarball`; Bootstrap/package logic performs whole-profile preflight/apply/check and writes `LEAN_BASELINE.json`, `CORE_BASELINE.json`, and `DEPLOYMENT_BASELINE.json`.
-11. Before publication, the workflow compiles generated tools, runs the generated no-network managed-baseline checker, confirms the generated manifest still carries the approved package/version/profile/integrity, and confirms the umbrella baseline identifies the expected `core` + `deployment` components.
-12. The workflow replaces only the approved seed state, verifies the staged diff, commits without force, and pushes the generated baseline.
+8. Bootstrap validates the private manifest against the current accepted Bootstrap `main` commit, target identity, current protocol/catalog, exact Lean package contract, and resolves `registry` to the exact npm SHA-512 value for orchestration.
+9. The workflow downloads exactly `@mriekki/lean@<approved-version>` with npm lifecycle scripts disabled and verifies the downloaded tarball against Bootstrap's exact resolved SHA-512 output.
+10. The deterministic generator receives that exact tarball through `generate_snapshot.py --lean-tarball`; Bootstrap/package logic resolves/verifies provenance before mutation, performs whole-profile preflight/apply/check, writes generated `POC_BOOTSTRAP.json` with the exact SRI, and writes `LEAN_BASELINE.json`, `CORE_BASELINE.json`, and `DEPLOYMENT_BASELINE.json`.
+11. Before publication, the workflow compiles generated tools, runs the generated no-network managed-baseline checker, confirms the generated manifest carries the exact package/version/profile/resolved integrity, and confirms the umbrella baseline identifies the expected `core` + `deployment` components.
+12. The workflow replaces only the approved seed state, verifies the staged diff, commits as the actual `<app-slug>[bot]` GitHub App identity, pushes without force, and records the generated baseline commit.
 13. ChatGPT verifies target default-branch CI on the exact published commit before local clone/fetch and setup acceptance.
 
 A missing/inaccessible target or Bootstrap repository, unavailable exact npm package, package integrity mismatch, invalid package/profile identity, managed-path conflict/drift, failed generator/package check, or failed/unavailable control-plane run is a stop condition. It is **not** permission for ChatGPT to silently switch to local generation, choose another package version/component commit, or create a ZIP/downloadable generated workspace. Local generation is used only when the human explicitly chooses that path.
