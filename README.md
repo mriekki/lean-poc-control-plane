@@ -82,13 +82,15 @@ See `docs/SETUP.md` for GitHub App configuration and operating details.
 
 The `[generate-poc]` workflow keeps the public request surface deliberately empty of private manifest data. After it reads and validates the approved private target manifest, it:
 
-1. validates schema-v2 `generation.lean` and receives exact package, version, `greenfield-poc` profile, and SHA-512 integrity from Bootstrap;
+1. validates schema-v2 `generation.lean` and receives the exact package, version, `greenfield-poc` profile, and an exact resolved SHA-512 integrity value from Bootstrap;
 2. downloads that exact public npm tarball with lifecycle scripts disabled;
-3. verifies the downloaded tarball against the approved SHA-512 integrity before generation;
+3. verifies the downloaded tarball against the resolved exact SHA-512 integrity before generation;
 4. passes that exact tarball to Bootstrap's canonical `generate_snapshot.py --lean-tarball` path;
 5. lets the exact local package CLI perform whole-profile preflight/apply/check for reusable Core + Deployment assets;
 6. validates `LEAN_BASELINE.json`, component-native baselines, and the generated no-network managed-baseline checker; and
 7. publishes only the validated generated tree to the approved target repository without force-pushing.
+
+Normal approved discovery may use `generation.lean.integrity: "registry"`; Bootstrap resolves that machine provenance before Control Plane package verification. Humans approve the exact package/version/profile, not npm hash plumbing.
 
 Normal greenfield generation does **not** check out private Core or Deployment Kit sources. Their exact accepted repository/commit/distribution provenance is assembled into `@mriekki/lean` upstream by `lean-platform` and recorded in the generated component-native baselines.
 
