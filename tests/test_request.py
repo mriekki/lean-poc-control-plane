@@ -124,6 +124,16 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)
 
+    def test_generation_workflow_uses_actual_app_bot_identity_for_commits(self) -> None:
+        workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        self.assertIn("steps.target-token.outputs.app-slug", workflow)
+        self.assertIn('bot_login="${APP_SLUG}[bot]"', workflow)
+        self.assertIn('gh api "/users/${bot_login}" --jq', workflow)
+        self.assertIn("@users.noreply.github.com", workflow)
+        self.assertIn('git -C "$target" config user.name "$BOT_LOGIN"', workflow)
+        self.assertIn('git -C "$target" config user.email "$BOT_EMAIL"', workflow)
+        self.assertNotIn('config user.name "lean-poc-control-plane[bot]"', workflow)
+
     def test_generation_workflow_uses_exact_public_lean_artifact(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
         self.assertIn("actions/setup-node@v6", workflow)

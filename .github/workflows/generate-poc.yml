@@ -59,6 +59,27 @@ jobs:
           permission-contents: write
           permission-workflows: write
 
+      - name: Resolve GitHub App bot identity
+        id: app-bot
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.target-token.outputs.token }}
+          APP_SLUG: ${{ steps.target-token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APP_SLUG" ]; then
+            echo "GitHub App token action did not return app-slug" >&2
+            exit 2
+          fi
+          bot_login="${APP_SLUG}[bot]"
+          bot_id="$(gh api "/users/${bot_login}" --jq '.id')"
+          if ! [[ "$bot_id" =~ ^[0-9]+$ ]]; then
+            echo "Unable to resolve GitHub App bot user id for ${bot_login}" >&2
+            exit 2
+          fi
+          echo "login=${bot_login}" >> "$GITHUB_OUTPUT"
+          echo "email=${bot_id}+${bot_login}@users.noreply.github.com" >> "$GITHUB_OUTPUT"
+
       - name: Checkout accepted Bootstrap control plane
         uses: actions/checkout@v4
         with:
@@ -220,6 +241,8 @@ jobs:
         shell: bash
         env:
           PROJECT_SLUG: ${{ steps.manifest.outputs.project_slug }}
+          BOT_LOGIN: ${{ steps.app-bot.outputs.login }}
+          BOT_EMAIL: ${{ steps.app-bot.outputs.email }}
         run: |
           set -euo pipefail
           target="$GITHUB_WORKSPACE/target"
@@ -235,8 +258,8 @@ jobs:
           cp -a "$generated"/. "$target"/
           python tools/check_baseline_handoff.py copied --generated "$generated" --target "$target"
 
-          git -C "$target" config user.name "lean-poc-control-plane[bot]"
-          git -C "$target" config user.email "noreply@github.com"
+          git -C "$target" config user.name "$BOT_LOGIN"
+          git -C "$target" config user.email "$BOT_EMAIL"
           git -C "$target" add -A
           python tools/check_baseline_handoff.py staged --generated "$generated" --target "$target"
           python tools/check_staged_diff.py --root "$target"
