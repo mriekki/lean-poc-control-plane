@@ -10,6 +10,7 @@ Public operational issues contain only safe identities:
 
 ```text
 [invite-lean] github-owner
+[lean-doctor] github-owner
 [revoke-lean] github-owner
 [generate-poc] owner/repository
 [sync-core] owner/repository
@@ -58,7 +59,7 @@ When Pull requests or Checks permissions are added to an existing App installati
 
 For a zero-extra-step POC flow, install the App on all repositories in each approved developer account. Each workflow still mints tokens scoped to the exact repositories required by that run:
 
-- invitation/doctor check: the invited developer's App installation;
+- invitation/doctor check: the invited or already-active developer's App installation;
 - generation source token: only `mriekki/lean-poc-bootstrap`;
 - Core-sync source token: only `mriekki/lean-agentic-core`;
 - target token: only the requested `owner/repository`.
@@ -110,13 +111,21 @@ The invited owner can decline with:
 
 Unclaimed invitations expire automatically after the configured claim window. Decline/expiration make no authorization change.
 
-After activation, the developer or an admin can comment:
+For a newly activated developer, the invitation issue remains a valid readiness portal. The developer or an admin can comment:
 
 ```text
 /lean-doctor
 ```
 
-The doctor verifies ACTIVE registry state, GitHub App installation, and the SHA-256-pinned public ChatGPT bootstrap contract at `mriekki/lean-platform/chatgpt/current.json`.
+An already-ACTIVE developer who has no invitation issue can instead open one empty-body issue under their own GitHub identity:
+
+```text
+[lean-doctor] github-owner
+```
+
+An ACTIVE admin may open the same standalone doctor issue for that developer. Opening it runs the doctor immediately; after fixing a failed prerequisite, the developer or an admin can comment `/lean-doctor` on that same issue to retry.
+
+The doctor verifies ACTIVE registry state, GitHub App installation, and the SHA-256-pinned public ChatGPT bootstrap contract at `mriekki/lean-platform/chatgpt/current.json`. It is onboarding/readiness evidence and is not a mandatory per-POC discovery or generation step.
 
 See `docs/INVITATIONS.md` for full lifecycle and revocation rules.
 
