@@ -1,0 +1,49 @@
+name: Decline Lean Invitation
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  decline:
+    if: >-
+      startsWith(github.event.issue.title, '[invite-lean] ') &&
+      github.event.comment.body == '/decline-lean'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate decline identity
+        id: decline
+        run: |
+          python tools/invitation.py extract-decline \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json
+
+      - name: Close declined invitation
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.decline.outputs.target_owner }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `LEAN INVITATION — DECLINED\n\n@${target} declined this invitation. No developer authorization was changed.`,
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              state_reason: 'not_planned',
+            });

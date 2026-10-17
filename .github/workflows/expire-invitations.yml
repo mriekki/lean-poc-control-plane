@@ -1,0 +1,51 @@
+name: Expire Lean Invitations
+
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: List open issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --limit 200 \
+            --json number,title,createdAt > "$RUNNER_TEMP/open-issues.json"
+
+      - name: Resolve expired invitation issues
+        run: |
+          python tools/invitation.py list-expired \
+            --issues "$RUNNER_TEMP/open-issues.json" \
+            --policy config/invitation-policy.json > "$RUNNER_TEMP/expired-issues.txt"
+
+      - name: Close expired invitations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r issue; do
+            [ -z "$issue" ] && continue
+            gh issue comment "$issue" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body "LEAN INVITATION — EXPIRED\n\nThe configured claim window elapsed. No developer authorization was changed. Ask a Lean admin for a new invitation if access is still wanted."
+            gh issue close "$issue" \
+              --repo "$GITHUB_REPOSITORY" \
+              --reason "not planned"
+          done < "$RUNNER_TEMP/expired-issues.txt"

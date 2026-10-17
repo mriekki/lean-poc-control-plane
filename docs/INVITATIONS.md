@@ -24,7 +24,7 @@ Current roles:
 - `admin` — normal POC-author capabilities plus invitation/revocation administration;
 - `poc-author` — normal POC generation and remote Core-sync authorization.
 
-`config/allowed-owners.json` remains a generated compatibility projection for the existing generation/sync request validator. It must exactly mirror ACTIVE developers that carry `generate-poc`.
+`config/allowed-owners.json` remains a generated compatibility projection for the existing generation/sync request validator. It must exactly mirror ACTIVE developers that carry `generate-poc`. CI validates that invariant.
 
 No credential, private POC definition, private repository content, or secret belongs in either file.
 
@@ -54,11 +54,20 @@ The claim workflow verifies:
 
 - the invitation was opened by a currently authorized admin;
 - the commenter exactly matches the invited owner;
+- the invitation is still inside the configured claim window;
 - the required GitHub App installation can be minted/verified for that owner.
 
 Only then does it activate the developer registry and compatibility allowlist.
 
 Knowing or forwarding an invitation URL does not grant authorization.
+
+The invited developer may instead comment:
+
+```text
+/decline-lean
+```
+
+Decline closes the invitation and makes no registry/authorization change.
 
 ## Invitation lifecycle
 
@@ -72,8 +81,11 @@ PENDING
 Other terminal states:
 
 ```text
-REVOKED
+DECLINED
+EXPIRED
 ```
+
+Invitation claim lifetime is configured in `config/invitation-policy.json`; the initial policy is 30 days. Expired invitations are closed automatically by the scheduled expiry workflow. Expiration and decline never mutate the developer registry.
 
 A failed App check leaves the invitation pending and does not mutate authorization.
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timedelta, timezone
 import json
 import os
 import re
@@ -12,6 +13,7 @@ from typing import Any
 INVITE_PREFIX = "[invite-lean]"
 REVOKE_PREFIX = "[revoke-lean]"
 ACCEPT_COMMAND = "/accept-lean"
+DECLINE_COMMAND = "/decline-lean"
 DOCTOR_COMMAND = "/lean-doctor"
 
 VALID_ROLES = {"admin", "poc-author"}
@@ -29,7 +31,7 @@ class InvitationError(RuntimeError):
     pass
 
 
-def read_json(path: Path) -> dict[str, Any]:
+def read_json(path: Path) -> dict[str, Any] | list[Any]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
@@ -49,9 +51,19 @@ def normalize_login(value: object) -> str:
     return login
 
 
+def load_policy(path: Path) -> dict[str, int]:
+    data = read_json(path)
+    if not isinstance(data, dict) or data.get("schemaVersion") != 1:
+        raise InvitationError("Unsupported invitation policy schemaVersion")
+    days = data.get("expiryDays")
+    if not isinstance(days, int) or not 1 <= days <= 365:
+        raise InvitationError("invitation expiryDays must be an integer from 1 to 365")
+    return {"expiryDays": days}
+
+
 def load_registry(path: Path) -> dict[str, Any]:
     data = read_json(path)
-    if data.get("schemaVersion") != 1:
+    if not isinstance(data, dict) or data.get("schemaVersion") != 1:
         raise InvitationError("Unsupported developer registry schemaVersion")
     developers = data.get("developers")
     if not isinstance(developers, list) or not developers:
@@ -117,7 +129,7 @@ def require_capability(data: dict[str, Any], owner: str, capability: str) -> dic
 
 def load_allowed_owners(path: Path) -> list[str]:
     data = read_json(path)
-    if data.get("schemaVersion") != 1:
+    if not isinstance(data, dict) or data.get("schemaVersion") != 1:
         raise InvitationError("Unsupported allowed-owner schemaVersion")
     owners = data.get("owners")
     if not isinstance(owners, list):
@@ -180,6 +192,30 @@ def parse_title(issue: dict[str, Any], prefix: str) -> str:
     return normalize_login(match.group(1))
 
 
+def parse_github_time(value: object) -> datetime:
+    text = str(value or "").strip()
+    if not text:
+        raise InvitationError("Invitation creation time is missing")
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise InvitationError(f"Invalid invitation creation time: {text!r}") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def invitation_expired(
+    issue: dict[str, Any],
+    expiry_days: int,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    created = parse_github_time(issue.get("created_at") or issue.get("createdAt"))
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    return current >= created + timedelta(days=expiry_days)
+
+
 def extract_invite(event: dict[str, Any], registry: dict[str, Any]) -> dict[str, str]:
     issue = issue_from_event(event)
     require_empty_body(issue, "Invitation")
@@ -196,12 +232,20 @@ def extract_invite(event: dict[str, Any], registry: dict[str, Any]) -> dict[str,
     }
 
 
-def extract_claim(event: dict[str, Any], registry: dict[str, Any]) -> dict[str, str]:
+def extract_claim(
+    event: dict[str, Any],
+    registry: dict[str, Any],
+    *,
+    expiry_days: int = 30,
+    now: datetime | None = None,
+) -> dict[str, str]:
     issue = issue_from_event(event)
     require_empty_body(issue, "Invitation")
     target = parse_title(issue, INVITE_PREFIX)
     inviter = issue_author(issue)
     require_capability(registry, inviter, "invite-developer")
+    if invitation_expired(issue, expiry_days, now=now):
+        raise InvitationError("Invitation has expired; ask an admin to create a new invitation")
 
     comment = event.get("comment")
     if not isinstance(comment, dict):
@@ -223,6 +267,52 @@ def extract_claim(event: dict[str, Any], registry: dict[str, Any]) -> dict[str, 
         "claimant": claimant,
         "issue_number": issue_number(issue),
     }
+
+
+def extract_decline(event: dict[str, Any], registry: dict[str, Any]) -> dict[str, str]:
+    issue = issue_from_event(event)
+    require_empty_body(issue, "Invitation")
+    target = parse_title(issue, INVITE_PREFIX)
+    inviter = issue_author(issue)
+    require_capability(registry, inviter, "invite-developer")
+    comment = event.get("comment")
+    if not isinstance(comment, dict):
+        raise InvitationError("Invitation decline requires an issue_comment event")
+    if str(comment.get("body") or "").strip() != DECLINE_COMMAND:
+        raise InvitationError(f"Invitation decline comment must be exactly '{DECLINE_COMMAND}'")
+    actor = normalize_login((comment.get("user") or {}).get("login"))
+    if actor.lower() != target.lower():
+        raise InvitationError(f"Invitation may only be declined by {target}; found {actor}")
+    return {
+        "target_owner": target,
+        "request_author": inviter,
+        "claimant": actor,
+        "issue_number": issue_number(issue),
+    }
+
+
+def expired_issue_numbers(
+    issues: list[Any],
+    expiry_days: int,
+    *,
+    now: datetime | None = None,
+) -> list[int]:
+    expired: list[int] = []
+    for value in issues:
+        if not isinstance(value, dict):
+            continue
+        title = str(value.get("title") or "").strip()
+        if not title.startswith(f"{INVITE_PREFIX} "):
+            continue
+        try:
+            parse_title(value, INVITE_PREFIX)
+            if invitation_expired(value, expiry_days, now=now):
+                number = int(value.get("number"))
+                if number > 0:
+                    expired.append(number)
+        except (InvitationError, TypeError, ValueError):
+            continue
+    return expired
 
 
 def active_admin_count(registry: dict[str, Any]) -> int:
@@ -354,13 +444,19 @@ def write_github_output(values: dict[str, str]) -> None:
 def command_extract(args: argparse.Namespace, kind: str) -> int:
     registry = load_registry(args.registry)
     event = read_json(args.event)
-    parser = {
-        "invite": extract_invite,
-        "claim": extract_claim,
-        "revoke": extract_revoke,
-        "doctor": extract_doctor,
-    }[kind]
-    values = parser(event, registry)
+    if not isinstance(event, dict):
+        raise InvitationError("GitHub event payload must be a JSON object")
+    if kind == "claim":
+        expiry_days = load_policy(args.policy)["expiryDays"]
+        values = extract_claim(event, registry, expiry_days=expiry_days)
+    else:
+        parser = {
+            "invite": extract_invite,
+            "decline": extract_decline,
+            "revoke": extract_revoke,
+            "doctor": extract_doctor,
+        }[kind]
+        values = parser(event, registry)
     write_github_output(values)
     print(json.dumps(values, indent=2))
     return 0
@@ -368,8 +464,9 @@ def command_extract(args: argparse.Namespace, kind: str) -> int:
 
 def command_validate(args: argparse.Namespace) -> int:
     registry = load_registry(args.registry)
+    load_policy(args.policy)
     validate_projection(registry, args.allowed_owners)
-    print("Developer registry and compatibility allowlist are valid")
+    print("Developer registry, invitation policy, and compatibility allowlist are valid")
     return 0
 
 
@@ -397,10 +494,22 @@ def command_revoke(args: argparse.Namespace) -> int:
     return 0
 
 
-def add_common_extract(sub: argparse._SubParsersAction[argparse.ArgumentParser], name: str) -> None:
+def command_expired(args: argparse.Namespace) -> int:
+    issues = read_json(args.issues)
+    if not isinstance(issues, list):
+        raise InvitationError("Issue listing must be a JSON array")
+    expiry_days = load_policy(args.policy)["expiryDays"]
+    for number in expired_issue_numbers(issues, expiry_days):
+        print(number)
+    return 0
+
+
+def add_extract(sub: argparse._SubParsersAction[argparse.ArgumentParser], name: str) -> None:
     parser = sub.add_parser(name)
     parser.add_argument("--event", required=True, type=Path)
     parser.add_argument("--registry", required=True, type=Path)
+    if name == "extract-claim":
+        parser.add_argument("--policy", required=True, type=Path)
     parser.set_defaults(func=lambda args, kind=name.removeprefix("extract-"): command_extract(args, kind))
 
 
@@ -408,12 +517,19 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Lean developer invitation and registry tooling")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    for name in ("extract-invite", "extract-claim", "extract-revoke", "extract-doctor"):
-        add_common_extract(sub, name)
+    for name in (
+        "extract-invite",
+        "extract-claim",
+        "extract-decline",
+        "extract-revoke",
+        "extract-doctor",
+    ):
+        add_extract(sub, name)
 
     validate = sub.add_parser("validate-config")
     validate.add_argument("--registry", required=True, type=Path)
     validate.add_argument("--allowed-owners", required=True, type=Path)
+    validate.add_argument("--policy", required=True, type=Path)
     validate.set_defaults(func=command_validate)
 
     activate_parser = sub.add_parser("activate")
@@ -431,6 +547,11 @@ def parse_args() -> argparse.Namespace:
     revoke_parser.add_argument("--revoked-by", required=True)
     revoke_parser.add_argument("--issue-number", required=True, type=int)
     revoke_parser.set_defaults(func=command_revoke)
+
+    expired = sub.add_parser("list-expired")
+    expired.add_argument("--issues", required=True, type=Path)
+    expired.add_argument("--policy", required=True, type=Path)
+    expired.set_defaults(func=command_expired)
 
     return parser.parse_args()
 

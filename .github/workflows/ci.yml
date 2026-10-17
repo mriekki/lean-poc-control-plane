@@ -27,5 +27,11 @@ jobs:
               json.loads(path.read_text(encoding='utf-8'))
               print('OK', path)
           PY
+      - name: Validate developer authorization configuration
+        run: |
+          python tools/invitation.py validate-config \
+            --registry config/developers.json \
+            --allowed-owners config/allowed-owners.json \
+            --policy config/invitation-policy.json
       - name: Unit tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v

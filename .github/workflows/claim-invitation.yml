@@ -26,12 +26,13 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Validate claim identity
+      - name: Validate claim identity and lifetime
         id: claim
         run: |
           python tools/invitation.py extract-claim \
             --event "$GITHUB_EVENT_PATH" \
-            --registry config/developers.json
+            --registry config/developers.json \
+            --policy config/invitation-policy.json
 
       - name: Verify GitHub App installation
         id: app-token
@@ -74,7 +75,8 @@ jobs:
             --issue-number "${{ steps.claim.outputs.issue_number }}"
           python tools/invitation.py validate-config \
             --registry config/developers.json \
-            --allowed-owners config/allowed-owners.json
+            --allowed-owners config/allowed-owners.json \
+            --policy config/invitation-policy.json
 
       - name: Commit operational registry update
         if: steps.app-token.outcome == 'success'
