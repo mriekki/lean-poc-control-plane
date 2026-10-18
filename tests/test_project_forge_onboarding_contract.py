@@ -36,6 +36,31 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("New POC:", text)
         self.assertIn("compatibility alias", text)
 
+    def test_test_mode_has_clear_preview_and_non_authorizing_result(self):
+        invite = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
+        claim = (ROOT / ".github" / "workflows" / "claim-invitation.yml").read_text(encoding="utf-8")
+
+        self.assertIn("[test-invite-forge]", invite)
+        self.assertIn("Invitation message preview", invite)
+        self.assertIn("TEST MODE — no access or authorization will be granted or changed", invite)
+        self.assertIn("[test-invite-forge]", claim)
+        self.assertIn("TEST READY FOR PROJECT FORGE", claim)
+        self.assertIn("Developer registry mutation: NOT PERFORMED", claim)
+        self.assertIn("Compatibility allowlist mutation: NOT PERFORMED", claim)
+        self.assertIn("Project generation: NOT PERFORMED", claim)
+
+    def test_test_claim_job_is_repository_read_only_and_has_no_activation_steps(self):
+        claim = (ROOT / ".github" / "workflows" / "claim-invitation.yml").read_text(encoding="utf-8")
+        marker = "  test-claim:\n"
+        self.assertIn(marker, claim)
+        test_job = claim.split(marker, 1)[1]
+        self.assertIn("contents: read", test_job)
+        self.assertIn("issues: write", test_job)
+        self.assertNotIn("tools/invitation.py activate", test_job)
+        self.assertNotIn("git push", test_job)
+        self.assertNotIn("config/allowed-owners.json", test_job)
+        self.assertNotIn("Commit operational registry update", test_job)
+
 
 if __name__ == "__main__":
     unittest.main()
