@@ -1,4 +1,4 @@
-name: Invite Lean Developer
+name: Invite Project Forge Builder
 
 on:
   issues:
@@ -36,7 +36,7 @@ jobs:
           print(f"expiry_days={policy['expiryDays']}")
           PY
 
-      - name: Publish onboarding instructions
+      - name: Publish Project Forge onboarding instructions
         uses: actions/github-script@v7
         env:
           TARGET_OWNER: ${{ steps.invite.outputs.target_owner }}
@@ -48,21 +48,40 @@ jobs:
             const expiry = process.env.EXPIRY_DAYS;
             const appUrl = process.env.APP_INSTALL_URL ||
               'https://github.com/mriekki/lean-poc-control-plane/blob/main/docs/SETUP.md#installations';
-            const contractUrl =
-              'https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md';
+            const welcomeUrl =
+              'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
             const body = [
-              `LEAN INVITATION — PENDING`,
+              `# Welcome to Project Forge`,
               ``,
-              `Invited GitHub owner: @${target}`,
-              `Claim window: ${expiry} days`,
+              `@${target}, you've been invited as a **Project Builder**.`,
               ``,
-              `1. Install/approve the Lean POC Generator GitHub App: ${appUrl}`,
-              `2. While signed in as @${target}, comment exactly: \`/accept-lean\``,
-              `3. After activation, comment \`/lean-doctor\` to verify readiness.`,
-              `4. Then use the public ChatGPT bootstrap entrypoint: ${contractUrl}`,
+              `Project Forge is an AI-guided software development and learning platform for building your own projects from idea through implementation, testing, deployment, and structured learning.`,
+              ``,
+              `Your projects belong to **your GitHub account**. This invitation does not give you access to another developer's private projects or to private Project Forge source repositories.`,
+              ``,
+              `**Learn what Project Forge is:** ${welcomeUrl}`,
+              ``,
+              `## Activate your access`,
+              ``,
+              `**Step 1 of 2 — Install the GitHub App**`,
+              ``,
+              `Install/approve Project Forge's GitHub App (currently registered as **Lean POC Generator**): ${appUrl}`,
+              ``,
+              `For the smoothest experience, allow it for all repositories. Exact workflow tokens are still scoped to the repository being operated on. Selected-repository installations are supported, but each newly created project repository must be added before generation/update operations can use it.`,
+              ``,
+              `**Step 2 of 2 — Accept**`,
+              ``,
+              `While signed in as **@${target}**, comment exactly:`,
+              ``,
+              '`/accept-lean`',
+              ``,
+              `Project Forge will verify your identity, GitHub App installation, activation, and public platform contract automatically. You should not need to run a separate readiness command on the normal path.`,
+              ``,
+              `Invitation window: **${expiry} days**.`,
               ``,
               `To decline instead, comment \`/decline-lean\`.`,
-              `Knowing this issue URL does not grant access; claim identity and the GitHub App installation are verified before activation.`,
+              ``,
+              `_The issue URL alone does not grant access; the invited GitHub identity and App installation are verified before activation._`,
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
