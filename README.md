@@ -1,6 +1,26 @@
 # Lean POC Control Plane
 
-Public, credential-isolated orchestration for GitHub-first Lean POC generation and remote Lean Core synchronization across approved developer-owned repositories.
+Public, credential-isolated orchestration for GitHub-first Lean POC generation and remote Lean Core synchronization across approved developer-owned repositories. **Project Forge** is the human-facing product name; this repository keeps its existing technical name for compatibility.
+
+## Project Forge admin quick start
+
+For normal administration, start from this repository's **Issues → New issue** page and choose a template:
+
+- **Invite a Project Forge Builder** — real invitation/authorization for another GitHub owner;
+- **Test Project Forge onboarding** — non-authorizing self-test using your own active admin account.
+
+The templates prefill the compatibility title prefixes. Append only the exact GitHub username and keep the issue body empty.
+
+Equivalent raw titles are:
+
+```text
+[invite-lean] github-owner
+[test-invite-forge] admin-github-owner
+```
+
+The self-test renders the prospective invitation message, walks through the same GitHub App/identity/public-contract checks, and can report `TEST READY FOR PROJECT FORGE`. It never changes the developer registry, compatibility allowlist, roles/capabilities, Projects, or deployments.
+
+See `docs/INVITATIONS.md` for the complete real/test onboarding lifecycle.
 
 ## Ownership model
 
@@ -45,8 +65,6 @@ Revocation uses one admin-authorized empty-body issue:
 ```
 
 Revocation removes future Control Plane authorization only. It never deletes, transfers, disables, or mutates repositories already owned by the developer. The tooling refuses to revoke the last active Lean admin.
-
-See `docs/INVITATIONS.md` for the full lifecycle.
 
 ## Request model
 
