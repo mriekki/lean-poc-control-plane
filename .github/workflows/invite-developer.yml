@@ -89,3 +89,101 @@ jobs:
               issue_number: context.issue.number,
               body,
             });
+
+  test-preview:
+    if: startsWith(github.event.issue.title, '[test-invite-forge] ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate self-test request
+        id: test-invite
+        run: |
+          python tools/onboarding_test.py extract-invite \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json
+
+      - name: Read invitation policy
+        id: test-policy
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          policy = json.loads(Path('config/invitation-policy.json').read_text(encoding='utf-8'))
+          print(f"expiry_days={policy['expiryDays']}")
+          PY
+
+      - name: Publish onboarding simulation and invitation message preview
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.test-invite.outputs.target_owner }}
+          EXPIRY_DAYS: ${{ steps.test-policy.outputs.expiry_days }}
+          APP_INSTALL_URL: ${{ vars.APP_INSTALL_URL }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            const expiry = process.env.EXPIRY_DAYS;
+            const issueUrl = context.payload.issue.html_url;
+            const appUrl = process.env.APP_INSTALL_URL ||
+              'https://github.com/mriekki/lean-poc-control-plane/blob/main/docs/SETUP.md#installations';
+            const welcomeUrl =
+              'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
+            const body = [
+              '# Project Forge onboarding test',
+              '',
+              '**TEST MODE — no access or authorization will be granted or changed.**',
+              '',
+              `This issue lets @${target} experience the Builder onboarding flow using the real public pages, GitHub identity, GitHub App verification, and Project Forge contract verification.`,
+              '',
+              'This test cannot:',
+              '- modify the developer registry or compatibility allowlist;',
+              '- change roles or capabilities;',
+              '- create or generate a Project repository;',
+              '- deploy or tear down anything.',
+              '',
+              `**Learn what Project Forge is:** ${welcomeUrl}`,
+              '',
+              '## Invitation message preview',
+              '',
+              '**Subject:** Invitation to Project Forge',
+              '',
+              '```text',
+              `Hi ${target},`,
+              '',
+              `You've been invited to Project Forge, an AI-guided software development and learning platform for building your own projects from idea through implementation, testing, deployment, and structured learning.`,
+              '',
+              `Learn what Project Forge is: ${welcomeUrl}`,
+              '',
+              `Activate your access: ${issueUrl}`,
+              '',
+              `Your projects remain under your own GitHub account. The invitation does not provide access to another developer's private projects or private Project Forge source repositories.`,
+              '```',
+              '',
+              '## Simulate activation',
+              '',
+              '**Step 1 of 2 — Inspect the GitHub App**',
+              '',
+              `Open the Project Forge GitHub App page (currently registered as **Lean POC Generator**): ${appUrl}`,
+              '',
+              'Because this is a self-test, an existing installation is expected and does not need to be removed/reinstalled just to continue.',
+              '',
+              '**Step 2 of 2 — Accept the test invitation**',
+              '',
+              `While signed in as **@${target}**, comment exactly:`,
+              '',
+              '`/accept-lean`',
+              '',
+              'The test will verify the same GitHub identity, App availability, and public Project Forge contract used by the real onboarding path, but it will perform no activation write.',
+              '',
+              `Test window: **${expiry} days**.`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
