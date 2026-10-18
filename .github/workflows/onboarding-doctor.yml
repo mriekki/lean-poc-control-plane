@@ -1,4 +1,4 @@
-name: Lean Onboarding Doctor
+name: Project Forge Onboarding Doctor
 
 on:
   issues:
@@ -43,7 +43,7 @@ jobs:
           owner: ${{ steps.doctor.outputs.target_owner }}
           permission-contents: read
 
-      - name: Verify public ChatGPT bootstrap contract
+      - name: Verify public Project Forge ChatGPT contract
         id: contract
         continue-on-error: true
         shell: bash
@@ -60,14 +60,14 @@ jobs:
 
           descriptor = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
           if descriptor.get("schemaVersion") != 1 or descriptor.get("channel") != "stable":
-              raise SystemExit("Unsupported public Lean bootstrap descriptor")
+              raise SystemExit("Unsupported public Project Forge bootstrap descriptor")
           base = "https://raw.githubusercontent.com/mriekki/lean-platform/main/"
           for item in descriptor.get("documents", []):
               data = urllib.request.urlopen(base + item["path"], timeout=20).read()
               digest = hashlib.sha256(data).hexdigest()
               if digest != item["sha256"]:
                   raise SystemExit(f"Contract hash mismatch: {item['path']}")
-          print(f"Lean ChatGPT contract v{descriptor['contractVersion']} verified")
+          print(f"Project Forge ChatGPT contract v{descriptor['contractVersion']} verified")
           PY
 
       - name: Report onboarding readiness
@@ -82,18 +82,19 @@ jobs:
             const app = process.env.APP_OK === 'success';
             const contract = process.env.CONTRACT_OK === 'success';
             const ready = app && contract;
+            const setup = 'https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md';
             const body = [
-              'LEAN ONBOARDING CHECK',
+              '# Project Forge readiness check',
               '',
-              `✓ Developer registry: ACTIVE`,
+              `✓ Developer authorization: ACTIVE`,
               `${app ? '✓' : '✗'} GitHub App installation: ${app ? 'verified' : 'not verified'}`,
-              `${contract ? '✓' : '✗'} Public ChatGPT bootstrap contract: ${contract ? 'verified' : 'unavailable or invalid'}`,
+              `${contract ? '✓' : '✗'} Public Project Forge contract: ${contract ? 'verified' : 'unavailable or invalid'}`,
               '',
               ready
-                ? 'READY FOR LEAN — configure the ChatGPT coding Project once, then start with `New POC: <idea>`.'
+                ? 'READY FOR PROJECT FORGE — set up the ChatGPT coding Project once, then start with `New Project: <idea>`.'
                 : 'NOT READY — resolve the failed check(s), then comment `/lean-doctor` on this issue to retry.',
               '',
-              'Bootstrap entrypoint: https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md',
+              `ChatGPT setup: ${setup}`,
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
