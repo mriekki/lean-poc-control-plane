@@ -17,6 +17,17 @@ Generated project repository
 What is true about this project?
 ```
 
+## Admin quick actions
+
+GitHub issue templates are the preferred entry points so admins do not have to remember the compatibility prefixes.
+
+From the repository's **Issues → New issue** page choose one of:
+
+- **Invite a Project Forge Builder** — create a real authorization invitation for another GitHub owner;
+- **Test Project Forge onboarding** — safely rehearse the onboarding experience using the active admin's own GitHub account.
+
+The templates prefill the required title prefix and intentionally leave the issue body empty. The admin only appends the exact GitHub username to the title.
+
 ## Developer registry
 
 `config/developers.json` is the operational developer registry.
@@ -125,6 +136,47 @@ New Project: <idea>
 ```
 
 `New POC:` remains a compatibility alias for the same internal discovery/generation protocol.
+
+## Admin onboarding test mode
+
+An active admin can rehearse the onboarding experience before inviting a real Builder by opening an empty-body issue for **their own GitHub identity**:
+
+```text
+[test-invite-forge] admin-github-owner
+```
+
+This is intentionally a **self-test only**. The issue opener, title owner, and `/accept-lean` commenter must all be the same active admin identity. A test issue cannot target another Builder or prospective Builder.
+
+The test portal reproduces the important user-facing parts of onboarding:
+
+```text
+Project Forge overview
+→ invitation message preview
+→ GitHub App page
+→ /accept-lean
+→ GitHub identity verification
+→ GitHub App installation verification
+→ public Project Forge contract verification
+→ TEST READY FOR PROJECT FORGE
+```
+
+The test uses the same configured claim lifetime as a real invitation.
+
+The test workflow is deliberately non-authorizing:
+
+- repository contents permission is read-only for the test claim job;
+- no `activate` operation is called;
+- `config/developers.json` is never written;
+- `config/allowed-owners.json` is never written;
+- no role/capability changes occur;
+- no Project repository is created or generated;
+- no deployment or tear-down operation is available from the test path.
+
+A successful test therefore demonstrates the onboarding UX, account identity, current GitHub App availability, and current public-contract integrity without changing future Project Forge authorization.
+
+The test issue also renders an **Invitation message preview** with the subject, short Project Forge description, Welcome-page link, and activation link that an admin can use as the basis for the real email/message sent to a prospective Builder.
+
+Because an active admin may already have the GitHub App installed, self-test mode does not attempt to remove/reinstall it. A later clean-room test using a separate GitHub account the admin legitimately controls remains useful if first-install behavior itself needs validation.
 
 ## Invitation lifecycle
 
