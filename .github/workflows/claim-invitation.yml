@@ -1,4 +1,4 @@
-name: Claim Lean Invitation
+name: Claim Project Forge Invitation
 
 on:
   issue_comment:
@@ -50,11 +50,12 @@ jobs:
         with:
           script: |
             const body = [
-              'LEAN INVITATION — INSTALLATION REQUIRED',
+              '# Project Forge activation needs one fix',
               '',
-              'The GitHub identity claim matched, but the Lean POC Generator GitHub App installation could not be verified.',
+              'Your GitHub identity matched the invitation, but Project Forge could not verify its GitHub App installation for this account.',
               '',
-              'Install/approve the App for this GitHub account, then comment `/accept-lean` again.',
+              'Install/approve the App (currently registered as **Lean POC Generator**) for this GitHub account, then comment `/accept-lean` again.',
+              '',
               'No developer authorization was activated.',
             ].join('\n');
             await github.rest.issues.createComment({
@@ -93,36 +94,89 @@ jobs:
             git push origin HEAD:main
           fi
 
-      - name: Report active onboarding
+      - name: Automatically verify public Project Forge contract
+        if: steps.app-token.outcome == 'success'
+        id: contract
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://raw.githubusercontent.com/mriekki/lean-platform/main/"
+          curl --fail --silent --show-error "${base}chatgpt/current.json" -o "$RUNNER_TEMP/current.json"
+          python - "$RUNNER_TEMP/current.json" <<'PY'
+          import hashlib
+          import json
+          import sys
+          import urllib.request
+          from pathlib import Path
+
+          descriptor = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if descriptor.get("schemaVersion") != 1 or descriptor.get("channel") != "stable":
+              raise SystemExit("Unsupported public Project Forge bootstrap descriptor")
+          base = "https://raw.githubusercontent.com/mriekki/lean-platform/main/"
+          for item in descriptor.get("documents", []):
+              data = urllib.request.urlopen(base + item["path"], timeout=20).read()
+              digest = hashlib.sha256(data).hexdigest()
+              if digest != item["sha256"]:
+                  raise SystemExit(f"Contract hash mismatch: {item['path']}")
+          print(f"Project Forge ChatGPT contract v{descriptor['contractVersion']} verified")
+          PY
+
+      - name: Report Project Forge activation and readiness
         if: steps.app-token.outcome == 'success'
         uses: actions/github-script@v7
         env:
           TARGET_OWNER: ${{ steps.claim.outputs.target_owner }}
+          CONTRACT_OK: ${{ steps.contract.outcome }}
         with:
           script: |
             const target = process.env.TARGET_OWNER;
-            const start =
-              'https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md';
-            const body = [
-              'LEAN INVITATION — ACTIVE',
+            const contract = process.env.CONTRACT_OK === 'success';
+            const welcome = 'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
+            const setup = 'https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md';
+            const body = contract ? [
+              '# Project Forge is ready ✓',
               '',
-              `@${target} is now authorized for Lean POC generation.`,
+              `@${target} is now an active **Project Builder**.`,
               '',
-              `Next: comment \`/lean-doctor\` on this issue.`,
-              `ChatGPT bootstrap entrypoint: ${start}`,
+              '✓ GitHub identity: VERIFIED',
+              '✓ Project Forge access: ACTIVE',
+              '✓ GitHub App installation: READY',
+              '✓ Public platform contract: VERIFIED',
               '',
-              'Existing repositories remain owned by their developer; activation grants future Control Plane authorization only.',
-            ].join('\n');
+              '**Next:** set up your Project Forge ChatGPT coding Project once:',
+              setup,
+              '',
+              'After that, start with:',
+              '',
+              '`New Project: <your idea>`',
+              '',
+              `Project Forge overview: ${welcome}`,
+              '',
+              'Your repositories remain yours. Activation grants future Project Forge Control Plane authorization only.',
+            ] : [
+              '# Project Forge access activated — readiness check needs attention',
+              '',
+              `@${target} is now an active **Project Builder** and the GitHub App installation is verified.`,
+              '',
+              'The public Project Forge contract could not be verified automatically.',
+              '',
+              'Resolve the public-contract availability/integrity issue, then comment `/lean-doctor` on this issue to retry the readiness check.',
+              '',
+              `Project Forge overview: ${welcome}`,
+            ];
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body,
+              body: body.join('\n'),
             });
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              state: 'closed',
-              state_reason: 'completed',
-            });
+            if (contract) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+            }
