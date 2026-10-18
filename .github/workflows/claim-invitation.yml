@@ -5,7 +5,7 @@ on:
     types: [created]
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 concurrency:
@@ -17,6 +17,9 @@ jobs:
     if: >-
       startsWith(github.event.issue.title, '[invite-lean] ') &&
       github.event.comment.body == '/accept-lean'
+    permissions:
+      contents: write
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,6 +175,114 @@ jobs:
               body: body.join('\n'),
             });
             if (contract) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+            }
+
+  test-claim:
+    if: >-
+      startsWith(github.event.issue.title, '[test-invite-forge] ') &&
+      github.event.comment.body == '/accept-lean'
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate self-test identity and lifetime
+        id: test-claim
+        run: |
+          python tools/onboarding_test.py extract-claim \
+            --event "$GITHUB_EVENT_PATH" \
+            --registry config/developers.json \
+            --policy config/invitation-policy.json
+
+      - name: Verify GitHub App installation for test identity
+        id: test-app-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ steps.test-claim.outputs.target_owner }}
+          permission-contents: read
+
+      - name: Verify public Project Forge contract for test
+        id: test-contract
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://raw.githubusercontent.com/mriekki/lean-platform/main/"
+          curl --fail --silent --show-error "${base}chatgpt/current.json" -o "$RUNNER_TEMP/current.json"
+          python - "$RUNNER_TEMP/current.json" <<'PY'
+          import hashlib
+          import json
+          import sys
+          import urllib.request
+          from pathlib import Path
+
+          descriptor = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if descriptor.get("schemaVersion") != 1 or descriptor.get("channel") != "stable":
+              raise SystemExit("Unsupported public Project Forge bootstrap descriptor")
+          base = "https://raw.githubusercontent.com/mriekki/lean-platform/main/"
+          for item in descriptor.get("documents", []):
+              data = urllib.request.urlopen(base + item["path"], timeout=20).read()
+              digest = hashlib.sha256(data).hexdigest()
+              if digest != item["sha256"]:
+                  raise SystemExit(f"Contract hash mismatch: {item['path']}")
+          print(f"Project Forge ChatGPT contract v{descriptor['contractVersion']} verified")
+          PY
+
+      - name: Report onboarding test result
+        uses: actions/github-script@v7
+        env:
+          TARGET_OWNER: ${{ steps.test-claim.outputs.target_owner }}
+          APP_OK: ${{ steps.test-app-token.outcome }}
+          CONTRACT_OK: ${{ steps.test-contract.outcome }}
+        with:
+          script: |
+            const target = process.env.TARGET_OWNER;
+            const app = process.env.APP_OK === 'success';
+            const contract = process.env.CONTRACT_OK === 'success';
+            const ready = app && contract;
+            const setup = 'https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md';
+            const body = [
+              ready ? '# TEST READY FOR PROJECT FORGE ✓' : '# Project Forge onboarding test needs attention',
+              '',
+              '**TEST MODE — authorization state was not changed.**',
+              '',
+              `✓ GitHub self-test identity: @${target}`,
+              `${app ? '✓' : '✗'} GitHub App installation: ${app ? 'VERIFIED' : 'NOT VERIFIED'}`,
+              `${contract ? '✓' : '✗'} Public Project Forge contract: ${contract ? 'VERIFIED' : 'UNAVAILABLE OR INVALID'}`,
+              '✓ Developer registry mutation: NOT PERFORMED',
+              '✓ Compatibility allowlist mutation: NOT PERFORMED',
+              '✓ Project generation: NOT PERFORMED',
+              '',
+              ready
+                ? `The onboarding mechanics are ready to rehearse through the one-time ChatGPT setup: ${setup}`
+                : 'Resolve the failed check above, then comment `/accept-lean` again on this test issue.',
+              '',
+              'A real invitation still requires a separate `[invite-lean] <github-owner>` issue and the real invited identity. This test grants no future authorization.',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+            if (ready) {
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
