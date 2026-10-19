@@ -1,0 +1,148 @@
+# Project Forge Control Plane — Administrator Setup
+
+> **For Project Forge administrators/operators only.** Project Builders do not need to configure this repository, GitHub Actions variables/secrets, or the GitHub App. Builder onboarding is intentionally kept separate in [`SETUP.md`](SETUP.md).
+
+This repository is the public orchestration surface for Project Forge generation, Builder invitation/authorization, and supported remote update workflows. Reusable discovery/generation logic remains in `mriekki/lean-poc-bootstrap`; the public `@mriekki/lean` package remains the normal reusable-asset delivery boundary for generated Projects.
+
+Canonical repository identity:
+
+```text
+mriekki/project-forge-control-plane
+```
+
+Technical compatibility commands and schema identifiers remain unchanged.
+
+## Security boundary
+
+Public operational issues contain only safe identities:
+
+```text
+[invite-lean] github-owner
+[test-invite-forge]
+[lean-doctor] github-owner
+[revoke-lean] github-owner
+[generate-poc] owner/repository
+[sync-core] owner/repository
+```
+
+Issue bodies must remain empty. Private Project definitions, baseline contents, source code, credentials, and secrets never belong in a Control Plane issue.
+
+Private generation data stays in the target repository's `POC_BOOTSTRAP.json`. Workflows read target-private files only after minting a GitHub App installation token scoped to that exact repository.
+
+Do not store PATs or npm publish tokens in this repository. The credential model is one GitHub App private key stored as an Actions secret; workflows mint short-lived installation tokens for the exact source/target repositories needed by each operation.
+
+## GitHub App registration
+
+Create one GitHub App owned by `mriekki` and configure it so it can be installed on approved Builder accounts.
+
+Public display identity:
+
+```text
+GitHub App name: Project Forge Builder
+```
+
+Keep GitHub's identity terms distinct:
+
+- **App name** is the human-facing registration name: `Project Forge Builder`.
+- **App slug** is GitHub's URL-safe App identifier and may retain historical wording after a display-name change.
+- **GitHub App bot username** is `<app-slug>[bot]`.
+- **App installation** is the App's authorization on an owner/account and selected repositories.
+
+Workflows resolve the actual App slug/bot identity rather than guessing it. A display-name rename must not be coupled to a bot-identity or credential migration unless GitHub itself changes those values.
+
+Required repository permissions for generation plus the existing remote Core-sync workflow:
+
+- **Contents: Read and write**;
+- **Workflows: Read and write**;
+- **Pull requests: Read and write**;
+- **Checks: Read-only**;
+- **Metadata: Read-only**.
+
+The Control Plane does not need target-repository Issues permission. It comments on its own public issues using the workflow run's normal `GITHUB_TOKEN`.
+
+The App does not need webhooks for this design; onboarding, generation, and Core sync are initiated by this repository's issue-triggered Actions workflows.
+
+When permissions are expanded on an existing App installation, GitHub may require the installation owner to approve the change. Confirm the installation remains active before relying on the new permission.
+
+## Installations
+
+Install **Project Forge Builder** on the Control Plane owner account and on each approved Builder account. For the smoothest Builder experience, allow it for all repositories in the Builder account. Each workflow still mints tokens scoped to the exact repositories required by that run.
+
+If a Builder selects repositories instead of all repositories, every newly created Project repository must be added before generation/update operations can use it.
+
+The invitation workflow derives the public installation URL from the App slug returned by `actions/create-github-app-token`; administrators do **not** maintain a separate `APP_INSTALL_URL` variable.
+
+## Actions configuration
+
+Configure only these GitHub App credentials in this repository:
+
+1. Store the App **Client ID** as Actions variable `APP_CLIENT_ID`.
+2. Store the complete App private key as Actions secret `APP_PRIVATE_KEY`.
+3. Do not commit either credential.
+4. Keep `config/developers.json`, `config/invitation-policy.json`, and `config/allowed-owners.json` valid under CI.
+
+The invitation workflow uses those credentials to resolve GitHub's actual App slug and constructs the standard GitHub App installation URL automatically. Renaming the App display name does not require rotating `APP_CLIENT_ID` or `APP_PRIVATE_KEY`.
+
+## Developer invitation contract
+
+Normal onboarding uses the invitation workflow; do not manually add a normal Builder to `config/allowed-owners.json`.
+
+An ACTIVE admin creates one empty-body issue:
+
+```text
+[invite-lean] github-owner
+```
+
+The invited Builder follows the concise instructions in the invitation issue and [`SETUP.md`](SETUP.md): install/approve **Project Forge Builder** if needed, then comment exactly `/accept-lean` in the invitation issue.
+
+The claim workflow verifies identity, invitation lifetime, and Project Forge Builder App installation before updating the developer registry and compatibility allowlist.
+
+The invited owner can decline with `/decline-lean`. Unclaimed invitations expire after the configured claim window.
+
+Successful activation automatically verifies the public Project Forge ChatGPT contract. `/lean-doctor` remains the retry/diagnostic path if readiness later needs attention.
+
+## Admin onboarding self-test
+
+Choose **Issues → New issue → Test Project Forge onboarding** and submit the prefilled empty-body issue:
+
+```text
+[test-invite-forge]
+```
+
+The workflow infers the target from the active admin who opened the issue. It cannot target another user and never mutates authorization state. Continue by adding `/accept-lean` to that same test issue when instructed.
+
+## Per-Project generation request contract
+
+After discovery and Project Definition approval:
+
+1. the Builder owns a private, safe target repository;
+2. ChatGPT verifies exact GitHub owner/target safety;
+3. only the approved schema-v2 `POC_BOOTSTRAP.json` seed is written before generation;
+4. the manifest pins exact Bootstrap provenance and an exact `@mriekki/lean` package/version/profile;
+5. ChatGPT opens an empty-body public issue here titled `[generate-poc] owner/repository`;
+6. the author must equal the target owner and be ACTIVE with generation authorization;
+7. the workflow obtains a Bootstrap-only source token and exact-target token;
+8. Bootstrap validates the private manifest and resolves machine provenance such as registry integrity;
+9. the workflow downloads/verifies exactly the approved package;
+10. deterministic generation runs through Bootstrap's canonical package path;
+11. generated tools/baselines are verified before publication;
+12. the validated generated tree is published without force-pushing; and
+13. target default-branch CI is verified before local setup acceptance.
+
+Normal approved discovery may use `integrity: "registry"` for deterministic machine resolution. Humans are not expected to discover or paste npm integrity metadata. Package/version/profile are the meaningful human approval surface; Bootstrap resolves and verifies exact integrity before reusable mutation.
+
+Missing access, unavailable exact packages, integrity mismatch, invalid provenance, managed-path conflict, or failed generation are stop conditions. They never authorize silent fallback to a different package, local ZIP, destination, or component commit.
+
+## Remote Core-sync compatibility path
+
+A supported consumer may request:
+
+```text
+[sync-core] owner/repository
+```
+
+with an empty body. The workflow validates authorization and baseline integrity, uses exact source/target tokens, creates a new non-force branch when needed, opens a consumer PR, and reports success only when its checks are green. Merge remains a human decision.
+
+## Repository rename boundary
+
+The canonical repository is `mriekki/project-forge-control-plane`. Historical `mriekki/lean-poc-control-plane` links may redirect at GitHub, but new documentation, contracts, and tooling must emit the canonical Project Forge repository identity. Compatibility command/schema identifiers are intentionally unchanged.
