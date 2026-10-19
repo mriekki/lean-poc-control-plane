@@ -63,15 +63,17 @@ jobs:
               ``,
               `## Activate your access`,
               ``,
+              `Complete both steps below in this issue. The final activation action is to add a **new issue comment** containing exactly \`/accept-lean\`.`,
+              ``,
               `**Step 1 of 2 — Install the GitHub App**`,
               ``,
               `Install/approve Project Forge's GitHub App (currently registered as **Lean POC Generator**): ${appUrl}`,
               ``,
               `For the smoothest experience, allow it for all repositories. Exact workflow tokens are still scoped to the repository being operated on. Selected-repository installations are supported, but each newly created project repository must be added before generation/update operations can use it.`,
               ``,
-              `**Step 2 of 2 — Accept**`,
+              `**Step 2 of 2 — Accept in this issue**`,
               ``,
-              `While signed in as **@${target}**, comment exactly:`,
+              `While signed in as **@${target}**, scroll to the comment box at the bottom of this issue and add a new comment containing exactly:`,
               ``,
               '`/accept-lean`',
               ``,
@@ -91,7 +93,7 @@ jobs:
             });
 
   test-preview:
-    if: startsWith(github.event.issue.title, '[test-invite-forge] ')
+    if: startsWith(github.event.issue.title, '[test-invite-forge]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -158,7 +160,10 @@ jobs:
               '',
               `Learn what Project Forge is: ${welcomeUrl}`,
               '',
-              `Activate your access: ${issueUrl}`,
+              'Activate your access:',
+              `1. Open your Project Forge invitation issue: ${issueUrl}`,
+              '2. Follow the GitHub App installation/approval step shown in the issue.',
+              '3. In that issue, scroll to the comment box and add a new comment containing exactly: /accept-lean',
               '',
               `Your projects remain under your own GitHub account. The invitation does not provide access to another developer's private projects or private Project Forge source repositories.`,
               '```',
@@ -171,9 +176,9 @@ jobs:
               '',
               'Because this is a self-test, an existing installation is expected and does not need to be removed/reinstalled just to continue.',
               '',
-              '**Step 2 of 2 — Accept the test invitation**',
+              '**Step 2 of 2 — Accept the test invitation in this issue**',
               '',
-              `While signed in as **@${target}**, comment exactly:`,
+              `While signed in as **@${target}**, scroll to the comment box at the bottom of this issue and add a new comment containing exactly:`,
               '',
               '`/accept-lean`',
               '',
