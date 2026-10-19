@@ -96,6 +96,14 @@ class OnboardingTestModeTests(unittest.TestCase):
         self.assertEqual(values["target_owner"], "mriekki")
         self.assertEqual(values["request_author"], "mriekki")
 
+    def test_template_title_infers_active_admin_identity(self) -> None:
+        values = onboarding_test.extract_test_invite(
+            issue_event("[test-invite-forge]"),
+            self.registry(),
+        )
+        self.assertEqual(values["target_owner"], "mriekki")
+        self.assertEqual(values["request_author"], "mriekki")
+
     def test_self_test_cannot_target_someone_else(self) -> None:
         with self.assertRaisesRegex(invitation.InvitationError, "self-test only"):
             onboarding_test.extract_test_invite(
@@ -108,6 +116,16 @@ class OnboardingTestModeTests(unittest.TestCase):
             onboarding_test.extract_test_invite(
                 issue_event(
                     "[test-invite-forge] builder-example",
+                    author="builder-example",
+                ),
+                self.registry(),
+            )
+
+    def test_non_admin_cannot_use_template_title_to_start_test_mode(self) -> None:
+        with self.assertRaises(invitation.InvitationError):
+            onboarding_test.extract_test_invite(
+                issue_event(
+                    "[test-invite-forge]",
                     author="builder-example",
                 ),
                 self.registry(),
@@ -143,6 +161,21 @@ class OnboardingTestModeTests(unittest.TestCase):
             self.registry(),
             expiry_days=30,
         )
+        self.assertEqual(values["claimant"], "mriekki")
+
+    @patch("onboarding_test.invitation.invitation_expired", return_value=False)
+    def test_template_title_can_be_accepted_by_same_admin(self, _expired) -> None:
+        event = issue_event("[test-invite-forge]")
+        event["comment"] = {
+            "body": "/accept-lean",
+            "user": {"login": "mriekki"},
+        }
+        values = onboarding_test.extract_test_claim(
+            event,
+            self.registry(),
+            expiry_days=30,
+        )
+        self.assertEqual(values["target_owner"], "mriekki")
         self.assertEqual(values["claimant"], "mriekki")
 
     @patch("onboarding_test.invitation.invitation_expired", return_value=True)
