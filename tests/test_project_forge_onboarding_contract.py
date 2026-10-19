@@ -12,6 +12,8 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("Project Builder", text)
         self.assertIn("Step 1 of 2", text)
         self.assertIn("Step 2 of 2", text)
+        self.assertIn("add a **new issue comment**", text)
+        self.assertIn("scroll to the comment box", text)
         self.assertIn("/accept-lean", text)
         self.assertNotIn("After activation, comment \\`/lean-doctor\\`", text)
 
@@ -41,7 +43,10 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         claim = (ROOT / ".github" / "workflows" / "claim-invitation.yml").read_text(encoding="utf-8")
 
         self.assertIn("[test-invite-forge]", invite)
+        self.assertIn("startsWith(github.event.issue.title, '[test-invite-forge]')", invite)
         self.assertIn("Invitation message preview", invite)
+        self.assertIn("Open your Project Forge invitation issue", invite)
+        self.assertIn("add a new comment containing exactly: /accept-lean", invite)
         self.assertIn("TEST MODE — no access or authorization will be granted or changed", invite)
         self.assertIn("[test-invite-forge]", claim)
         self.assertIn("TEST READY FOR PROJECT FORGE", claim)
