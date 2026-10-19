@@ -11,9 +11,18 @@ import invitation
 TEST_INVITE_PREFIX = "[test-invite-forge]"
 
 
+def _test_target(issue: dict) -> str:
+    """Resolve the self-test target without requiring the admin to type their login."""
+    title = str(issue.get("title") or "").strip()
+    author = invitation.issue_author(issue)
+    if title == TEST_INVITE_PREFIX:
+        return author
+    return invitation.parse_title(issue, TEST_INVITE_PREFIX)
+
+
 def _test_identity(issue: dict, registry: dict) -> tuple[str, str]:
     invitation.require_empty_body(issue, "Onboarding test")
-    target = invitation.parse_title(issue, TEST_INVITE_PREFIX)
+    target = _test_target(issue)
     author = invitation.issue_author(issue)
     record = invitation.require_capability(registry, author, "invite-developer")
     if record.get("role") != "admin":
