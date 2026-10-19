@@ -147,6 +147,8 @@ After discovery and Project Definition approval:
 12. the validated generated tree is published without force-pushing; and
 13. target default-branch CI is verified before local setup acceptance.
 
+Normal approved discovery may use `integrity: "registry"` for deterministic machine resolution. Humans are not expected to discover or paste npm integrity metadata. Package/version/profile are the meaningful human approval surface; Bootstrap resolves and verifies exact integrity before reusable mutation.
+
 Missing access, unavailable exact packages, integrity mismatch, invalid provenance, managed-path conflict, or failed generation are stop conditions. They never authorize silent fallback to a different package, local ZIP, destination, or component commit.
 
 ## Remote Core-sync compatibility path
