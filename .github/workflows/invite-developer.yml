@@ -36,18 +36,26 @@ jobs:
           print(f"expiry_days={policy['expiryDays']}")
           PY
 
+      - name: Resolve Project Forge Builder app identity
+        id: app-identity
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: read
+
       - name: Publish Project Forge onboarding instructions
         uses: actions/github-script@v7
         env:
           TARGET_OWNER: ${{ steps.invite.outputs.target_owner }}
           EXPIRY_DAYS: ${{ steps.policy.outputs.expiry_days }}
-          APP_INSTALL_URL: ${{ vars.APP_INSTALL_URL }}
+          APP_SLUG: ${{ steps.app-identity.outputs.app-slug }}
         with:
           script: |
             const target = process.env.TARGET_OWNER;
             const expiry = process.env.EXPIRY_DAYS;
-            const appUrl = process.env.APP_INSTALL_URL ||
-              'https://github.com/mriekki/project-forge-control-plane/blob/main/docs/SETUP.md#installations';
+            const appUrl = `https://github.com/apps/${process.env.APP_SLUG}/installations/new`;
             const welcomeUrl =
               'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
             const body = [
@@ -55,35 +63,25 @@ jobs:
               ``,
               `@${target}, you've been invited as a **Project Builder**.`,
               ``,
-              `Project Forge is an AI-guided software development and learning platform for building your own projects from idea through implementation, testing, deployment, and structured learning.`,
-              ``,
-              `Your projects belong to **your GitHub account**. This invitation does not give you access to another developer's private projects or to private Project Forge source repositories.`,
-              ``,
-              `**Learn what Project Forge is:** ${welcomeUrl}`,
-              ``,
               `## Activate your access`,
               ``,
-              `Complete both steps below in this issue. The final activation action is to add a **new issue comment** containing exactly \`/accept-lean\`.`,
+              `**1. Install Project Forge Builder**`,
               ``,
-              `**Step 1 of 2 — Install the Project Forge Builder GitHub App**`,
+              `Open the GitHub App and install/approve it for your GitHub account if needed: ${appUrl}`,
               ``,
-              `Install/approve **Project Forge Builder**: ${appUrl}`,
+              `For the simplest experience, allow it for all repositories. If it is already installed, do not remove or reinstall it just to continue.`,
               ``,
-              `For the smoothest experience, allow it for all repositories. Exact workflow tokens are still scoped to the repository being operated on. Selected-repository installations are supported, but each newly created project repository must be added before generation/update operations can use it.`,
+              `**2. Accept this invitation**`,
               ``,
-              `**Step 2 of 2 — Accept in this issue**`,
-              ``,
-              `While signed in as **@${target}**, scroll to the comment box at the bottom of this issue and add a new comment containing exactly:`,
+              `While signed in as **@${target}**, add a new comment to this issue containing exactly:`,
               ``,
               '`/accept-lean`',
               ``,
-              `Project Forge will verify your identity, GitHub App installation, activation, and public platform contract automatically. You should not need to run a separate readiness command on the normal path.`,
+              `Project Forge will verify the rest automatically. You do not need to configure the Control Plane, GitHub Actions, Bootstrap, or App credentials.`,
               ``,
-              `Invitation window: **${expiry} days**.`,
+              `Invitation window: **${expiry} days**. To decline instead, comment \`/decline-lean\`.`,
               ``,
-              `To decline instead, comment \`/decline-lean\`.`,
-              ``,
-              `_The issue URL alone does not grant access; the invited GitHub identity and App installation are verified before activation._`,
+              `More about Project Forge: ${welcomeUrl}`,
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -119,19 +117,27 @@ jobs:
           print(f"expiry_days={policy['expiryDays']}")
           PY
 
+      - name: Resolve Project Forge Builder app identity
+        id: test-app-identity
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: read
+
       - name: Publish onboarding simulation and invitation message preview
         uses: actions/github-script@v7
         env:
           TARGET_OWNER: ${{ steps.test-invite.outputs.target_owner }}
           EXPIRY_DAYS: ${{ steps.test-policy.outputs.expiry_days }}
-          APP_INSTALL_URL: ${{ vars.APP_INSTALL_URL }}
+          APP_SLUG: ${{ steps.test-app-identity.outputs.app-slug }}
         with:
           script: |
             const target = process.env.TARGET_OWNER;
             const expiry = process.env.EXPIRY_DAYS;
             const issueUrl = context.payload.issue.html_url;
-            const appUrl = process.env.APP_INSTALL_URL ||
-              'https://github.com/mriekki/project-forge-control-plane/blob/main/docs/SETUP.md#installations';
+            const appUrl = `https://github.com/apps/${process.env.APP_SLUG}/installations/new`;
             const welcomeUrl =
               'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
             const body = [
@@ -139,50 +145,34 @@ jobs:
               '',
               '**TEST MODE — no access or authorization will be granted or changed.**',
               '',
-              `This issue lets @${target} experience the Builder onboarding flow using the real public pages, GitHub identity, GitHub App verification, and Project Forge contract verification.`,
-              '',
-              'This test cannot:',
-              '- modify the developer registry or compatibility allowlist;',
-              '- change roles or capabilities;',
-              '- create or generate a Project repository;',
-              '- deploy or tear down anything.',
-              '',
-              `**Learn what Project Forge is:** ${welcomeUrl}`,
+              `This issue lets @${target} rehearse the same short onboarding path a new Project Builder receives.`,
               '',
               '## Invitation message preview',
-              '',
-              '**Subject:** Invitation to Project Forge',
               '',
               '```text',
               `Hi ${target},`,
               '',
-              `You've been invited to Project Forge, an AI-guided software development and learning platform for building your own projects from idea through implementation, testing, deployment, and structured learning.`,
-              '',
-              `Learn what Project Forge is: ${welcomeUrl}`,
+              `You've been invited to Project Forge.`,
               '',
               'Activate your access:',
-              `1. Open your Project Forge invitation issue: ${issueUrl}`,
-              '2. Install/approve the Project Forge Builder GitHub App if prompted.',
-              '3. In that issue, scroll to the comment box and add a new comment containing exactly: /accept-lean',
+              `1. Open your invitation issue: ${issueUrl}`,
+              `2. Install/approve Project Forge Builder if needed: ${appUrl}`,
+              '3. In the invitation issue, add a new comment containing exactly: /accept-lean',
               '',
-              `Your projects remain under your own GitHub account. The invitation does not provide access to another developer's private projects or private Project Forge source repositories.`,
+              `More about Project Forge: ${welcomeUrl}`,
               '```',
               '',
               '## Simulate activation',
               '',
-              '**Step 1 of 2 — Inspect the Project Forge Builder GitHub App**',
+              `1. Open **Project Forge Builder**: ${appUrl}`,
               '',
-              `Open **Project Forge Builder**: ${appUrl}`,
+              '   If it is already installed, do not remove or reinstall it for this test.',
               '',
-              'Because this is a self-test, an existing installation is expected and does not need to be removed/reinstalled just to continue.',
-              '',
-              '**Step 2 of 2 — Accept the test invitation in this issue**',
-              '',
-              `While signed in as **@${target}**, scroll to the comment box at the bottom of this issue and add a new comment containing exactly:`,
+              `2. While signed in as **@${target}**, add a new comment to this issue containing exactly:`,
               '',
               '`/accept-lean`',
               '',
-              'The test will verify the same GitHub identity, App availability, and public Project Forge contract used by the real onboarding path, but it will perform no activation write.',
+              'The test verifies GitHub identity, App availability, and the public Project Forge contract. It does not change authorization, create a Project, deploy, or tear down anything.',
               '',
               `Test window: **${expiry} days**.`,
             ].join('\n');
