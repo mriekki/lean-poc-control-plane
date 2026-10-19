@@ -57,7 +57,7 @@ jobs:
               '',
               'Your GitHub identity matched the invitation, but Project Forge could not verify its GitHub App installation for this account.',
               '',
-              'Install/approve the App (currently registered as **Lean POC Generator**) for this GitHub account, then comment `/accept-lean` again.',
+              'Install/approve the **Project Forge Builder** GitHub App for this account, then comment `/accept-lean` again.',
               '',
               'No developer authorization was activated.',
             ].join('\n');
@@ -87,13 +87,13 @@ jobs:
         env:
           TARGET_OWNER: ${{ steps.claim.outputs.target_owner }}
         run: |
-          git config user.name "lean-poc-control-plane[bot]"
+          git config user.name "project-forge-control-plane[bot]"
           git config user.email "noreply@github.com"
           git add config/developers.json config/allowed-owners.json
           if git diff --cached --quiet; then
             echo "Registry already reflects the activation."
           else
-            git commit -m "Activate Lean developer ${TARGET_OWNER}"
+            git commit -m "Activate Project Forge developer ${TARGET_OWNER}"
             git push origin HEAD:main
           fi
 
@@ -144,7 +144,7 @@ jobs:
               '',
               '✓ GitHub identity: VERIFIED',
               '✓ Project Forge access: ACTIVE',
-              '✓ GitHub App installation: READY',
+              '✓ Project Forge Builder GitHub App installation: READY',
               '✓ Public platform contract: VERIFIED',
               '',
               '**Next:** set up your Project Forge ChatGPT coding Project once:',
@@ -160,7 +160,7 @@ jobs:
             ] : [
               '# Project Forge access activated — readiness check needs attention',
               '',
-              `@${target} is now an active **Project Builder** and the GitHub App installation is verified.`,
+              `@${target} is now an active **Project Builder** and the Project Forge Builder GitHub App installation is verified.`,
               '',
               'The public Project Forge contract could not be verified automatically.',
               '',
@@ -264,7 +264,7 @@ jobs:
               '**TEST MODE — authorization state was not changed.**',
               '',
               `✓ GitHub self-test identity: @${target}`,
-              `${app ? '✓' : '✗'} GitHub App installation: ${app ? 'VERIFIED' : 'NOT VERIFIED'}`,
+              `${app ? '✓' : '✗'} Project Forge Builder GitHub App installation: ${app ? 'VERIFIED' : 'NOT VERIFIED'}`,
               `${contract ? '✓' : '✗'} Public Project Forge contract: ${contract ? 'VERIFIED' : 'UNAVAILABLE OR INVALID'}`,
               '✓ Developer registry mutation: NOT PERFORMED',
               '✓ Compatibility allowlist mutation: NOT PERFORMED',

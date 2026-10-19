@@ -1,10 +1,16 @@
 # Project Forge Developer Invitations
 
-The invitation system is the onboarding/authorization layer for developers who use Project Forge through the existing public Lean Control Plane infrastructure.
+The invitation system is the onboarding/authorization layer for Builders who use Project Forge.
 
-Project Forge is the human-facing product name. Technical compatibility identifiers such as `lean-poc-control-plane`, `[invite-lean]`, `/accept-lean`, `poc-author`, and `[generate-poc]` remain stable until a separate migration is justified.
+Canonical Control Plane repository:
 
-The onboarding model intentionally separates three questions:
+```text
+mriekki/project-forge-control-plane
+```
+
+The public GitHub App display name is **Project Forge Builder**. Technical compatibility identifiers such as `[invite-lean]`, `/accept-lean`, `poc-author`, `[generate-poc]`, and `POC_BOOTSTRAP.json` remain stable.
+
+The onboarding model separates three questions:
 
 ```text
 Invitation / developer registry
@@ -13,33 +19,31 @@ Who may use Project Forge?
 Public ChatGPT contract
 How should ChatGPT guide the Builder now?
 
-Generated project repository
-What is true about this project?
+Generated Project repository
+What is true about this Project?
 ```
 
 ## Admin quick actions
 
-GitHub issue templates are the preferred entry points so admins do not have to remember the compatibility prefixes.
+From **Issues → New issue** choose:
 
-From the repository's **Issues → New issue** page choose one of:
+- **Invite a Project Forge Builder** — real authorization invitation for another GitHub owner;
+- **Test Project Forge onboarding** — non-authorizing self-test using the active admin's own GitHub account.
 
-- **Invite a Project Forge Builder** — create a real authorization invitation for another GitHub owner;
-- **Test Project Forge onboarding** — safely rehearse the onboarding experience using the active admin's own GitHub account.
-
-The templates prefill the required title prefix and intentionally leave the issue body empty. The admin only appends the exact GitHub username to the title.
+The self-test is zero-input: submit the prefilled empty-body issue. The workflow infers the active admin from the issue opener.
 
 ## Developer registry
 
 `config/developers.json` is the operational developer registry.
 
-Current technical roles:
+Current technical roles remain:
 
 - `admin` — normal Project Builder capabilities plus invitation/revocation administration;
-- `poc-author` — the compatibility identifier for a normal Project Builder with generation and supported update/sync authorization.
+- `poc-author` — compatibility identifier for a normal Project Builder with generation and supported update/sync authorization.
 
-`config/allowed-owners.json` remains a generated compatibility projection for the existing generation/sync request validator. It must exactly mirror ACTIVE developers that carry `generate-poc`. CI validates that invariant.
+`config/allowed-owners.json` remains a generated compatibility projection for existing validators and must mirror ACTIVE developers with `generate-poc`. CI validates that invariant.
 
-No credential, private project definition, private repository content, or secret belongs in either file.
+No credential, private Project definition, private repository content, or secret belongs in either file.
 
 ## Product-facing invitation flow
 
@@ -51,145 +55,111 @@ An active admin creates one public issue with an empty body:
 
 Creating that issue is the meaningful administrative authorization gate.
 
-The issue URL is the single invitation/onboarding portal. The workflow explains what Project Forge is, makes clear that the invited Builder owns their own repositories, links to the public Project Forge welcome page, and presents only two normal activation actions:
+The issue URL is the invitation/onboarding portal. The notification and issue instructions should make the entire activation recipe explicit:
 
 ```text
-1. Install/approve Project Forge's GitHub App
-   (currently registered as Lean POC Generator)
-2. While signed in as the exact invited GitHub owner,
-   comment /accept-lean
+1. Open the Project Forge invitation issue.
+2. Install/approve the Project Forge Builder GitHub App if prompted.
+3. In that same issue, add a new comment containing exactly:
+   /accept-lean
 ```
 
-The invitation should not require the developer to understand Control Plane, Bootstrap, package, or contract internals before accepting.
+The invited Builder should not need to understand Control Plane, Bootstrap, package, or contract internals before accepting.
 
-For the smoothest zero-extra-step generation experience, install the GitHub App for all repositories in the invited account. Exact workflow tokens remain scoped to the repository being operated on. Selecting individual repositories is supported, but every newly created Project Forge repository must then be added to the App installation before generation/update operations can use it.
+For the smoothest flow, install Project Forge Builder for all repositories in the invited account. Exact workflow tokens remain scoped to the repository being operated on. Selecting individual repositories is supported, but each newly created Project repository must then be added before generation/update operations can use it.
 
 The claim workflow verifies:
 
 - the invitation was opened by a currently authorized admin;
 - the commenter exactly matches the invited owner;
 - the invitation is still inside the configured claim window;
-- the required GitHub App installation can be minted/verified for that owner.
+- the Project Forge Builder GitHub App installation can be minted/verified for that owner.
 
 Only then does it activate the developer registry and compatibility allowlist.
 
 Knowing or forwarding an invitation URL does not grant authorization.
 
-The invited developer may instead comment:
-
-```text
-/decline-lean
-```
-
-Decline closes the invitation and makes no registry/authorization change.
+The invited developer may instead comment `/decline-lean`; decline closes the invitation and makes no registry change.
 
 ## Automatic readiness after activation
 
-A successful `/accept-lean` now performs the normal onboarding readiness check automatically after activation.
-
-The happy path is therefore:
+Successful `/accept-lean` performs the normal readiness check automatically:
 
 ```text
 PENDING
 → identity verified
-→ GitHub App verified
+→ Project Forge Builder GitHub App verified
 → ACTIVE
-→ public Project Forge contract verified automatically
+→ public Project Forge contract verified
 → READY FOR PROJECT FORGE
 ```
 
-The developer should not need to run a separate doctor command on the normal path.
+The Builder should not need a separate doctor command on the happy path.
 
-If activation succeeds but the public Project Forge contract cannot be verified, authorization remains ACTIVE and the invitation stays available as the recovery surface. After the underlying problem is corrected, the developer or an admin may comment:
+If activation succeeds but the public contract cannot be verified, authorization remains ACTIVE and the invitation remains the recovery surface. After the underlying problem is fixed, the Builder or admin may comment `/lean-doctor`.
 
-```text
-/lean-doctor
-```
-
-That command is a retry/diagnostic mechanism, not a ceremonial onboarding step.
-
-For an already-ACTIVE developer who has no invitation issue, the developer can open one empty-body public issue under their own GitHub identity:
+An already-ACTIVE Builder without an invitation issue can instead open:
 
 ```text
 [lean-doctor] github-owner
 ```
 
-An active admin may open the same issue for that developer. Opening the standalone doctor issue runs the check immediately.
+The readiness check verifies ACTIVE registry state, Project Forge Builder App availability, and the SHA-256-pinned public Project Forge contract.
 
-The readiness check verifies:
-
-- the developer is `ACTIVE`;
-- the GitHub App installation remains available;
-- the public `lean-platform/chatgpt/current.json` descriptor is reachable;
-- every referenced public contract document matches its SHA-256 digest.
-
-The successful result is:
-
-```text
-READY FOR PROJECT FORGE
-```
-
-After readiness, the developer configures a ChatGPT coding Project once using the public Project Forge setup guide and a small personal Developer Profile. Normal work then begins with:
+After readiness, the Builder configures a ChatGPT coding Project once using the public setup guide, then starts normal work with:
 
 ```text
 New Project: <idea>
 ```
 
-`New POC:` remains a compatibility alias for the same internal discovery/generation protocol.
+`New POC:` remains a compatibility alias.
 
 ## Admin onboarding test mode
 
-An active admin can rehearse the onboarding experience before inviting a real Builder by opening an empty-body issue for **their own GitHub identity**:
+An active admin can rehearse onboarding before inviting a real Builder by submitting the empty-body **Test Project Forge onboarding** issue template:
 
 ```text
-[test-invite-forge] admin-github-owner
+[test-invite-forge]
 ```
 
-This is intentionally a **self-test only**. The issue opener, title owner, and `/accept-lean` commenter must all be the same active admin identity. A test issue cannot target another Builder or prospective Builder.
+The opener identity is the test identity. The `/accept-lean` commenter must be that same active admin. A self-test cannot target another Builder.
 
-The test portal reproduces the important user-facing parts of onboarding:
+The test portal reproduces:
 
 ```text
 Project Forge overview
 → invitation message preview
-→ GitHub App page
+→ Project Forge Builder GitHub App page
 → /accept-lean
 → GitHub identity verification
-→ GitHub App installation verification
+→ App installation verification
 → public Project Forge contract verification
 → TEST READY FOR PROJECT FORGE
 ```
 
-The test uses the same configured claim lifetime as a real invitation.
+The test is deliberately non-authorizing:
 
-The test workflow is deliberately non-authorizing:
+- test claim repository contents permission is read-only;
+- no activation operation runs;
+- developer registry and compatibility allowlist are never written;
+- no role/capability change occurs;
+- no Project repository is created/generated;
+- no deployment or tear-down path is available.
 
-- repository contents permission is read-only for the test claim job;
-- no `activate` operation is called;
-- `config/developers.json` is never written;
-- `config/allowed-owners.json` is never written;
-- no role/capability changes occur;
-- no Project repository is created or generated;
-- no deployment or tear-down operation is available from the test path.
-
-A successful test therefore demonstrates the onboarding UX, account identity, current GitHub App availability, and current public-contract integrity without changing future Project Forge authorization.
-
-The test issue also renders an **Invitation message preview** with the subject, short Project Forge description, Welcome-page link, and activation link that an admin can use as the basis for the real email/message sent to a prospective Builder.
-
-Because an active admin may already have the GitHub App installed, self-test mode does not attempt to remove/reinstall it. A later clean-room test using a separate GitHub account the admin legitimately controls remains useful if first-install behavior itself needs validation.
+A successful test demonstrates onboarding UX and readiness without changing future authorization.
 
 ## Invitation lifecycle
 
-The configured invitation claim lifetime is read from `config/invitation-policy.json` (currently 30 days).
+The invitation claim lifetime comes from `config/invitation-policy.json`.
 
-Terminal states remain:
+Terminal states include:
 
 ```text
 DECLINED
 EXPIRED
 ```
 
-Expired invitations are closed automatically by the scheduled expiry workflow. Expiration and decline never mutate the developer registry. A failed App check leaves the invitation pending and does not activate authorization.
+Expiration and decline never mutate developer authorization. A failed App check leaves the invitation pending.
 
 ## Revoke flow
 
@@ -199,25 +169,19 @@ An active admin creates an empty-body issue:
 [revoke-lean] github-owner
 ```
 
-Revocation removes the developer from future Control Plane authorization.
-
-It must never delete, transfer, disable, rewrite, or otherwise mutate repositories that developer already owns.
-
-The tooling refuses to revoke the last active admin.
+Revocation removes future Control Plane authorization only. It never deletes, transfers, disables, rewrites, or otherwise mutates repositories already owned by the Builder. The tooling refuses to revoke the last active admin.
 
 ## GitHub App setup
 
-For the smoothest invitation experience, configure repository variable:
+Configure repository variable:
 
 ```text
 APP_INSTALL_URL
 ```
 
-to the actual GitHub App installation URL. The registered App name may remain `Lean POC Generator` during the compatibility period even though the public product is Project Forge.
+to the actual **Project Forge Builder** GitHub App installation URL. If it is absent, invitations fall back to the Control Plane setup documentation.
 
-If `APP_INSTALL_URL` is absent, the invitation points to the Control Plane setup documentation instead.
-
-The existing `APP_CLIENT_ID` variable and `APP_PRIVATE_KEY` secret remain the only App credentials used by workflows. Invitation records never contain them.
+`APP_CLIENT_ID` and `APP_PRIVATE_KEY` remain the workflow credentials. Renaming the App display name does not require rotating them.
 
 ## Public onboarding pages
 
@@ -233,10 +197,10 @@ ChatGPT one-time setup:
 https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md
 ```
 
-The low-level public bootstrap entrypoint remains:
+Low-level public bootstrap entrypoint:
 
 ```text
 https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md
 ```
 
-New developers should use the invitation + Project Forge public onboarding path. They should not need copies of legacy Mark/Kyle handoff files or direct access to private Bootstrap/Core repositories.
+New Builders should use the invitation + Project Forge public onboarding path. They do not need legacy handoff files or direct access to private Bootstrap/Core repositories.
