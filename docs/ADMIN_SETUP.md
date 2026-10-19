@@ -2,7 +2,7 @@
 
 > **For Project Forge administrators/operators only.** Project Builders do not need to configure this repository, GitHub Actions variables/secrets, or the GitHub App. Builder onboarding is intentionally kept separate in [`SETUP.md`](SETUP.md).
 
-This repository is the public orchestration surface for Project Forge generation, Builder invitation/authorization, and supported remote update workflows. Reusable discovery/generation logic remains in `mriekki/lean-poc-bootstrap`; the public `@mriekki/lean` package remains the normal reusable-asset delivery boundary for generated Projects.
+This repository is the public orchestration surface for Project Forge generation, Builder invitation/authorization, and supported remote update workflows. Reusable discovery/generation logic remains in `mriekki/project-forge-bootstrap`; the public `@mriekki/lean` package remains the normal reusable-asset delivery boundary for generated Projects.
 
 Canonical repository identity:
 

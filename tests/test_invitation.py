@@ -186,6 +186,18 @@ class InvitationTests(unittest.TestCase):
         self.assertEqual(record["capabilities"], [])
         self.assertNotIn("daniel-example", invitation.load_allowed_owners(self.allowed_path))
 
+    def test_public_onboarding_surfaces_use_canonical_platform_urls(self) -> None:
+        paths = [
+            ROOT / ".github" / "workflows" / "invite-developer.yml",
+            ROOT / ".github" / "workflows" / "claim-invitation.yml",
+            ROOT / "docs" / "INVITATIONS.md",
+            ROOT / "docs" / "SETUP.md",
+        ]
+        for path in paths:
+            with self.subTest(path=path):
+                content = path.read_text(encoding="utf-8")
+                self.assertIn("mriekki/project-forge-platform", content)
+                self.assertNotIn("mriekki/lean-platform", content)
     def test_last_admin_cannot_be_revoked(self) -> None:
         event = issue_event("[revoke-lean] mriekki", author="mriekki")
         with self.assertRaises(invitation.InvitationError):

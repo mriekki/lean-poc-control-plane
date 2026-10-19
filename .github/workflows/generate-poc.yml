@@ -45,7 +45,7 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: mriekki
-          repositories: lean-poc-bootstrap
+          repositories: project-forge-bootstrap
           permission-contents: read
 
       - name: Create target installation token
@@ -83,7 +83,7 @@ jobs:
       - name: Checkout accepted Bootstrap control plane
         uses: actions/checkout@v4
         with:
-          repository: mriekki/lean-poc-bootstrap
+          repository: mriekki/project-forge-bootstrap
           token: ${{ steps.source-token.outputs.token }}
           path: bootstrap
           fetch-depth: 1

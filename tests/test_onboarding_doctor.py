@@ -114,6 +114,8 @@ class OnboardingDoctorTests(unittest.TestCase):
         self.assertIn("[invite-lean] ", workflow)
         self.assertIn("python tools/onboarding_doctor.py extract", workflow)
         self.assertIn("issue_number: Number(process.env.ISSUE_NUMBER)", workflow)
+        self.assertIn("mriekki/project-forge-platform", workflow)
+        self.assertNotIn("mriekki/lean-platform", workflow)
 
 
 if __name__ == "__main__":

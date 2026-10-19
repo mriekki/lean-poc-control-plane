@@ -39,11 +39,11 @@ Builder-facing setup is intentionally concise in `docs/SETUP.md`. Administrator/
 
 Canonical reusable engineering sources remain separately owned:
 
-- `mriekki/lean-agentic-core` — reusable workflow behavior and Core distribution;
-- `mriekki/lean-poc-bootstrap` — Project Discovery, manifest/catalog contracts, and deterministic greenfield generation;
-- `mriekki/lean-poc-deployment-kit` — reusable deployment mechanics;
-- `mriekki/lean-workspace-adoption-kit` — existing-repository adoption behavior;
-- `mriekki/lean-platform` / public `@mriekki/lean` — exact accepted reusable-component assembly, consumer delivery, and public ChatGPT bootstrap contract;
+- `mriekki/project-forge-core` — reusable workflow behavior and Core distribution;
+- `mriekki/project-forge-bootstrap` — Project Discovery, manifest/catalog contracts, and deterministic greenfield generation;
+- `mriekki/project-forge-deployment-kit` — reusable deployment mechanics;
+- `mriekki/project-forge-adoption-kit` — existing-repository adoption behavior;
+- `mriekki/project-forge-platform` / public `@mriekki/lean` — exact accepted reusable-component assembly, consumer delivery, and public ChatGPT bootstrap contract;
 - `mriekki/project-forge-control-plane` — secure cross-account authorization and GitHub orchestration.
 
 Each Builder owns their own Project repositories. This public Control Plane contains only safe request/orchestration and developer-authorization metadata; it must not contain private Project definitions, GitHub App private keys, PATs, or other credentials.
