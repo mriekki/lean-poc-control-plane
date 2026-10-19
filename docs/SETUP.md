@@ -36,12 +36,12 @@ Create one GitHub App owned by `mriekki` and configure it so it can be installed
 Public display identity:
 
 ```text
-GitHub App name: Project Forge
+GitHub App name: Project Forge Builder
 ```
 
 Keep GitHub's identity terms distinct:
 
-- **App name** is the human-facing registration name: `Project Forge`.
+- **App name** is the human-facing registration name: `Project Forge Builder`.
 - **App slug** is GitHub's URL-safe App identifier and may retain historical wording after a display-name change.
 - **GitHub App bot username** is `<app-slug>[bot]`.
 - **App installation** is the App's authorization on an owner/account and selected repositories.
@@ -64,7 +64,7 @@ When permissions are expanded on an existing App installation, GitHub may requir
 
 ## Installations
 
-For the smoothest Project Forge flow, install **Project Forge** on all repositories in each approved Builder account. Each workflow still mints tokens scoped to the exact repositories required by that run:
+For the smoothest Project Forge flow, install **Project Forge Builder** on all repositories in each approved Builder account. Each workflow still mints tokens scoped to the exact repositories required by that run:
 
 - invitation/doctor check: the invited or already-active Builder's installation;
 - generation source token: only `mriekki/lean-poc-bootstrap`;
@@ -80,7 +80,7 @@ After creating/configuring the App:
 1. Store its **Client ID** as Actions variable `APP_CLIENT_ID`.
 2. Store the complete App private key as Actions secret `APP_PRIVATE_KEY`.
 3. Do not commit either credential.
-4. Set Actions variable `APP_INSTALL_URL` to the actual **Project Forge** installation URL so onboarding gets a direct install link. If absent, onboarding falls back to this setup guide.
+4. Set Actions variable `APP_INSTALL_URL` to the actual **Project Forge Builder** installation URL so onboarding gets a direct install link. If absent, onboarding falls back to this setup guide.
 5. Keep `config/developers.json`, `config/invitation-policy.json`, and `config/allowed-owners.json` valid under CI.
 
 Renaming the App display name does not require rotating `APP_CLIENT_ID` or `APP_PRIVATE_KEY`.
@@ -98,14 +98,14 @@ An ACTIVE admin creates one empty-body issue:
 The issue is the onboarding portal. The invited Builder:
 
 1. opens the issue;
-2. installs/approves **Project Forge** if needed; and
+2. installs/approves **Project Forge Builder** if needed; and
 3. while signed in as the exact invited GitHub owner, adds a new issue comment containing exactly:
 
 ```text
 /accept-lean
 ```
 
-The claim workflow verifies identity, invitation lifetime, and Project Forge App installation before updating the developer registry and compatibility allowlist.
+The claim workflow verifies identity, invitation lifetime, and Project Forge Builder App installation before updating the developer registry and compatibility allowlist.
 
 The invited owner can decline with `/decline-lean`. Unclaimed invitations expire after the configured claim window.
 
@@ -117,7 +117,7 @@ An already-ACTIVE Builder without an invitation issue can open:
 [lean-doctor] github-owner
 ```
 
-The doctor verifies ACTIVE registry state, Project Forge App installation, and the SHA-256-pinned public contract at `mriekki/lean-platform/chatgpt/current.json`.
+The doctor verifies ACTIVE registry state, Project Forge Builder App installation, and the SHA-256-pinned public contract at `mriekki/lean-platform/chatgpt/current.json`.
 
 ## Admin onboarding self-test
 
