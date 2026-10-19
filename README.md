@@ -28,7 +28,7 @@ For a real invitation, the compatibility issue title remains:
 The invitation issue is the onboarding portal. The invited GitHub identity:
 
 1. opens the invitation;
-2. installs/approves the **Project Forge** GitHub App if needed; and
+2. installs/approves the **Project Forge Builder** GitHub App if needed; and
 3. replies in that same issue with exactly `/accept-lean`.
 
 The workflow verifies the exact identity and GitHub App installation before activation. The invited owner may use `/decline-lean`; unclaimed invitations expire under `config/invitation-policy.json`.
@@ -58,7 +58,7 @@ An already-active Builder can use the compatibility doctor issue:
 [lean-doctor] github-owner
 ```
 
-The doctor verifies registry state, Project Forge GitHub App installation, and the public Project Forge ChatGPT contract. It is onboarding/readiness evidence, not a per-Project discovery requirement.
+The doctor verifies registry state, Project Forge Builder GitHub App installation, and the public Project Forge ChatGPT contract. It is onboarding/readiness evidence, not a per-Project discovery requirement.
 
 Revocation uses:
 
@@ -110,6 +110,6 @@ The `[sync-core]` workflow remains the narrower compatibility path for generated
 
 ## GitHub App and setup
 
-The public GitHub App display name is **Project Forge**. GitHub's generated App slug/bot username remains an implementation identity and must be resolved dynamically rather than guessed.
+The public GitHub App display name is **Project Forge Builder**. GitHub's generated App slug/bot username remains an implementation identity and must be resolved dynamically rather than guessed.
 
 See `docs/SETUP.md` for App registration, permissions, Actions configuration, installation guidance, and operating details.
