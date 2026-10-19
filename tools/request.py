@@ -16,7 +16,11 @@ FOUNDATIONAL_REPOSITORIES = {
     "mriekki/lean-poc-bootstrap",
     "mriekki/lean-workspace-adoption-kit",
     "mriekki/family-meal-planner",
+    # Keep both names blocked during/after the repository rename. GitHub may
+    # redirect the legacy repository URL, but neither identity is a valid
+    # generation or generic Core-sync target.
     "mriekki/lean-poc-control-plane",
+    "mriekki/project-forge-control-plane",
 }
 
 
@@ -143,7 +147,7 @@ def extract_command(args: argparse.Namespace) -> int:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate Lean POC control-plane requests")
+    parser = argparse.ArgumentParser(description="Validate Project Forge control-plane requests")
     sub = parser.add_subparsers(dest="command", required=True)
 
     extract = sub.add_parser("extract", help="Validate an issue request and emit target metadata")
