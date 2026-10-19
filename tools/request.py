@@ -13,14 +13,20 @@ REQUEST_PREFIX = "[generate-poc]"
 SYNC_REQUEST_PREFIX = "[sync-core]"
 FOUNDATIONAL_REPOSITORIES = {
     "mriekki/lean-agentic-core",
+    "mriekki/project-forge-core",
     "mriekki/lean-poc-bootstrap",
+    "mriekki/project-forge-bootstrap",
     "mriekki/lean-workspace-adoption-kit",
+    "mriekki/project-forge-adoption-kit",
     "mriekki/family-meal-planner",
-    # Keep both names blocked during/after the repository rename. GitHub may
-    # redirect the legacy repository URL, but neither identity is a valid
-    # generation or generic Core-sync target.
+    # Keep legacy aliases blocked after repository renames because GitHub
+    # redirects still make them unsafe generation or generic Core-sync targets.
     "mriekki/lean-poc-control-plane",
     "mriekki/project-forge-control-plane",
+    "mriekki/lean-poc-deployment-kit",
+    "mriekki/project-forge-deployment-kit",
+    "mriekki/lean-platform",
+    "mriekki/project-forge-platform",
 }
 
 

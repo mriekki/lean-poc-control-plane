@@ -77,14 +77,31 @@ class RequestTests(unittest.TestCase):
             request.parse_sync_request(sync_event, {"mriekki"})
 
     def test_foundational_repository_is_rejected(self) -> None:
-        for title, parser in (
-            ("[generate-poc] mriekki/lean-poc-bootstrap", request.parse_request),
-            ("[sync-core] mriekki/family-meal-planner", request.parse_sync_request),
-            ("[sync-core] mriekki/lean-agentic-core", request.parse_sync_request),
-        ):
-            with self.subTest(title=title):
-                with self.assertRaises(request.RequestError):
-                    parser(self.event(title=title), {"mriekki"})
+        repositories = [
+            "lean-agentic-core",
+            "project-forge-core",
+            "lean-poc-bootstrap",
+            "project-forge-bootstrap",
+            "lean-workspace-adoption-kit",
+            "project-forge-adoption-kit",
+            "family-meal-planner",
+            "lean-poc-control-plane",
+            "project-forge-control-plane",
+            "lean-poc-deployment-kit",
+            "project-forge-deployment-kit",
+            "lean-platform",
+            "project-forge-platform",
+        ]
+
+        for repository in repositories:
+            for prefix, parser in (
+                ("[generate-poc]", request.parse_request),
+                ("[sync-core]", request.parse_sync_request),
+            ):
+                title = f"{prefix} mriekki/{repository}"
+                with self.subTest(title=title):
+                    with self.assertRaises(request.RequestError):
+                        parser(self.event(title=title), {"mriekki"})
 
     def test_title_must_be_exact_owner_repo_shape(self) -> None:
         for title in (
