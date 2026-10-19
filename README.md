@@ -33,7 +33,7 @@ The invitation issue is the onboarding portal. The invited GitHub identity:
 
 The workflow verifies the exact identity and GitHub App installation before activation. The invited owner may use `/decline-lean`; unclaimed invitations expire under `config/invitation-policy.json`.
 
-See `docs/INVITATIONS.md` for the complete real/test onboarding lifecycle.
+Builder-facing setup is intentionally concise in `docs/SETUP.md`. Administrator/operator configuration is separate in `docs/ADMIN_SETUP.md`. See `docs/INVITATIONS.md` for the complete real/test invitation lifecycle.
 
 ## Ownership model
 
@@ -110,6 +110,7 @@ The `[sync-core]` workflow remains the narrower compatibility path for generated
 
 ## GitHub App and setup
 
-The public GitHub App display name is **Project Forge Builder**. GitHub's generated App slug/bot username remains an implementation identity and must be resolved dynamically rather than guessed.
+The public GitHub App display name is **Project Forge Builder**. GitHub's generated App slug/bot username remains an implementation identity and is resolved dynamically rather than guessed.
 
-See `docs/SETUP.md` for App registration, permissions, Actions configuration, installation guidance, and operating details.
+- Builder onboarding: `docs/SETUP.md`
+- Control Plane administrator setup: `docs/ADMIN_SETUP.md`

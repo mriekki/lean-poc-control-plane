@@ -10,12 +10,37 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         text = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
         self.assertIn("Welcome to Project Forge", text)
         self.assertIn("Project Builder", text)
-        self.assertIn("Step 1 of 2", text)
-        self.assertIn("Step 2 of 2", text)
-        self.assertIn("add a **new issue comment**", text)
-        self.assertIn("scroll to the comment box", text)
+        self.assertIn("Install Project Forge Builder", text)
+        self.assertIn("Accept this invitation", text)
+        self.assertIn("add a new comment", text)
         self.assertIn("/accept-lean", text)
         self.assertNotIn("After activation, comment \\`/lean-doctor\\`", text)
+
+    def test_invitation_derives_app_install_url_without_admin_doc_fallback(self):
+        text = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
+        self.assertIn("actions/create-github-app-token@v3", text)
+        self.assertIn("outputs.app-slug", text)
+        self.assertIn("/installations/new", text)
+        self.assertNotIn("APP_INSTALL_URL", text)
+        self.assertNotIn("docs/SETUP.md#installations", text)
+
+    def test_builder_setup_contains_only_builder_actions(self):
+        text = (ROOT / "docs" / "SETUP.md").read_text(encoding="utf-8")
+        self.assertIn("Project Forge Builder Setup", text)
+        self.assertIn("Install Project Forge Builder", text)
+        self.assertIn("/accept-lean", text)
+        self.assertIn("More about Project Forge", text)
+        self.assertNotIn("GitHub App registration", text)
+        self.assertNotIn("Control Plane Actions configuration", text)
+        self.assertNotIn("APP_CLIENT_ID", text)
+        self.assertNotIn("APP_PRIVATE_KEY", text)
+
+    def test_admin_setup_owns_control_plane_configuration(self):
+        text = (ROOT / "docs" / "ADMIN_SETUP.md").read_text(encoding="utf-8")
+        self.assertIn("Administrator Setup", text)
+        self.assertIn("APP_CLIENT_ID", text)
+        self.assertIn("APP_PRIVATE_KEY", text)
+        self.assertNotIn("APP_INSTALL_URL", text)
 
     def test_claim_runs_readiness_automatically(self):
         text = (ROOT / ".github" / "workflows" / "claim-invitation.yml").read_text(encoding="utf-8")
@@ -45,7 +70,7 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("[test-invite-forge]", invite)
         self.assertIn("startsWith(github.event.issue.title, '[test-invite-forge]')", invite)
         self.assertIn("Invitation message preview", invite)
-        self.assertIn("Open your Project Forge invitation issue", invite)
+        self.assertIn("Open your invitation issue", invite)
         self.assertIn("add a new comment containing exactly: /accept-lean", invite)
         self.assertIn("TEST MODE — no access or authorization will be granted or changed", invite)
         self.assertIn("[test-invite-forge]", claim)

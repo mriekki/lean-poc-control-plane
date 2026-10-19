@@ -55,18 +55,20 @@ An active admin creates one public issue with an empty body:
 
 Creating that issue is the meaningful administrative authorization gate.
 
-The issue URL is the invitation/onboarding portal. The notification and issue instructions should make the entire activation recipe explicit:
+The issue URL is the invitation/onboarding portal. The notification and issue instructions make the complete Builder action explicit:
 
 ```text
 1. Open the Project Forge invitation issue.
-2. Install/approve the Project Forge Builder GitHub App if prompted.
+2. Install/approve the Project Forge Builder GitHub App if needed.
 3. In that same issue, add a new comment containing exactly:
    /accept-lean
 ```
 
-The invited Builder should not need to understand Control Plane, Bootstrap, package, or contract internals before accepting.
+The invited Builder does not need to understand or configure the Control Plane, GitHub Actions, Bootstrap, package plumbing, App credentials, or contract internals before accepting. Builder-facing guidance lives in `docs/SETUP.md`; operator setup lives separately in `docs/ADMIN_SETUP.md`.
 
 For the smoothest flow, install Project Forge Builder for all repositories in the invited account. Exact workflow tokens remain scoped to the repository being operated on. Selecting individual repositories is supported, but each newly created Project repository must then be added before generation/update operations can use it.
+
+The invitation workflow derives the GitHub App installation URL automatically from the actual App slug returned by `actions/create-github-app-token`. There is no separate `APP_INSTALL_URL` configuration variable and no fallback from a Builder invitation into administrator setup documentation.
 
 The claim workflow verifies:
 
@@ -127,9 +129,8 @@ The opener identity is the test identity. The `/accept-lean` commenter must be t
 The test portal reproduces:
 
 ```text
-Project Forge overview
-→ invitation message preview
-→ Project Forge Builder GitHub App page
+short invitation preview
+→ direct Project Forge Builder GitHub App install page
 → /accept-lean
 → GitHub identity verification
 → App installation verification
@@ -171,17 +172,11 @@ An active admin creates an empty-body issue:
 
 Revocation removes future Control Plane authorization only. It never deletes, transfers, disables, rewrites, or otherwise mutates repositories already owned by the Builder. The tooling refuses to revoke the last active admin.
 
-## GitHub App setup
+## GitHub App administration
 
-Configure repository variable:
+`APP_CLIENT_ID` and `APP_PRIVATE_KEY` remain the Control Plane workflow credentials. The invitation workflow uses them to resolve the real App slug and derive GitHub's standard installation URL automatically.
 
-```text
-APP_INSTALL_URL
-```
-
-to the actual **Project Forge Builder** GitHub App installation URL. If it is absent, invitations fall back to the Control Plane setup documentation.
-
-`APP_CLIENT_ID` and `APP_PRIVATE_KEY` remain the workflow credentials. Renaming the App display name does not require rotating them.
+Builders do not configure these values. Administrator setup is documented in `docs/ADMIN_SETUP.md`.
 
 ## Public onboarding pages
 
@@ -189,6 +184,12 @@ Project Forge overview:
 
 ```text
 https://github.com/mriekki/lean-platform/blob/main/WELCOME.md
+```
+
+Builder GitHub onboarding:
+
+```text
+https://github.com/mriekki/project-forge-control-plane/blob/main/docs/SETUP.md
 ```
 
 ChatGPT one-time setup:
