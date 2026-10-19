@@ -186,7 +186,7 @@ jobs:
 
   test-claim:
     if: >-
-      startsWith(github.event.issue.title, '[test-invite-forge] ') &&
+      startsWith(github.event.issue.title, '[test-invite-forge]') &&
       github.event.comment.body == '/accept-lean'
     permissions:
       contents: read
