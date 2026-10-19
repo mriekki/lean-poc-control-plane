@@ -70,7 +70,7 @@ Install **Project Forge Builder** on the Control Plane owner account and on each
 
 If a Builder selects repositories instead of all repositories, every newly created Project repository must be added before generation/update operations can use it.
 
-The invitation workflow derives the public installation URL from the App slug returned by `actions/create-github-app-token`; administrators do **not** maintain a separate `APP_INSTALL_URL` variable.
+The invitation workflow derives the public installation URL from the App slug returned by `actions/create-github-app-token`; no separately maintained installation-link setting is required.
 
 ## Actions configuration
 
