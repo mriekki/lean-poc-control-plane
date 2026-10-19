@@ -100,7 +100,7 @@ The `[generate-poc]` workflow:
 6. validates generated baselines and managed-file integrity; and
 7. publishes only the validated generated tree without force-pushing.
 
-Normal approved discovery may use `generation.lean.integrity: "registry"`; Bootstrap resolves that machine provenance to an exact SHA-512 value at the generation boundary before reusable mutation. Humans approve the exact package/version/profile, not npm hash plumbing.
+Normal approved discovery may use `generation.lean.integrity: "registry"`. Humans approve the exact package/version/profile, not npm hash plumbing. Bootstrap resolves registry metadata to the **resolved exact SHA-512 integrity** at the generation boundary, verifies it before reusable mutation, and records that exact value in generated provenance.
 
 A missing package/version, integrity mismatch, invalid profile, managed-path conflict, unavailable required access, or failed generation is a stop condition. The workflow never silently substitutes another package, source commit, or destination.
 
