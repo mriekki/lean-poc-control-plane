@@ -57,7 +57,7 @@ jobs:
             const expiry = process.env.EXPIRY_DAYS;
             const appUrl = `https://github.com/apps/${process.env.APP_SLUG}/installations/new`;
             const welcomeUrl =
-              'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
+              'https://github.com/mriekki/project-forge-platform/blob/main/WELCOME.md';
             const body = [
               `# Welcome to Project Forge`,
               ``,
@@ -139,7 +139,7 @@ jobs:
             const issueUrl = context.payload.issue.html_url;
             const appUrl = `https://github.com/apps/${process.env.APP_SLUG}/installations/new`;
             const welcomeUrl =
-              'https://github.com/mriekki/lean-platform/blob/main/WELCOME.md';
+              'https://github.com/mriekki/project-forge-platform/blob/main/WELCOME.md';
             const body = [
               '# Project Forge onboarding test',
               '',

@@ -41,7 +41,7 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: mriekki
-          repositories: lean-agentic-core
+          repositories: project-forge-core
           permission-contents: read
 
       - name: Create target installation token
@@ -57,10 +57,10 @@ jobs:
           permission-pull-requests: write
           permission-checks: read
 
-      - name: Checkout accepted Lean Core source
+      - name: Checkout accepted Project Forge Core source
         uses: actions/checkout@v4
         with:
-          repository: mriekki/lean-agentic-core
+          repository: mriekki/project-forge-core
           token: ${{ steps.source-token.outputs.token }}
           path: core
           fetch-depth: 1
@@ -221,7 +221,7 @@ jobs:
             echo "Core sync produced no changes after stale check." >&2
             exit 2
           fi
-          git -C target commit -m "Sync Lean Core to ${{ steps.core.outputs.sha }}"
+          git -C target commit -m "Sync Project Forge Core to ${{ steps.core.outputs.sha }}"
           git -C target push origin "HEAD:${{ steps.branch.outputs.name }}"
           echo "commit=$(git -C target rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -257,7 +257,7 @@ jobs:
             --repo "$TARGET_REPOSITORY" \
             --base "$BASE_BRANCH" \
             --head "$SYNC_BRANCH" \
-            --title "Sync Lean Core to ${CORE_SHA:0:12}" \
+            --title "Sync Project Forge Core to ${CORE_SHA:0:12}" \
             --body-file "$body_file")"
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
 

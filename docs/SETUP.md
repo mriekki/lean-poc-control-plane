@@ -32,7 +32,7 @@ When the issue reports **Project Forge is ready**, GitHub onboarding is complete
 
 Follow the one-time ChatGPT setup guide:
 
-https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md
+https://github.com/mriekki/project-forge-platform/blob/main/chatgpt/SETUP.md
 
 After that, start a coding Project with:
 
@@ -48,8 +48,8 @@ Do not create GitHub Actions variables, secrets, App credentials, or Control Pla
 
 ## More about Project Forge
 
-- Project Forge overview: https://github.com/mriekki/lean-platform/blob/main/WELCOME.md
-- ChatGPT setup: https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md
+- Project Forge overview: https://github.com/mriekki/project-forge-platform/blob/main/WELCOME.md
+- ChatGPT setup: https://github.com/mriekki/project-forge-platform/blob/main/chatgpt/SETUP.md
 - Project Forge Control Plane: https://github.com/mriekki/project-forge-control-plane
 
 Administrators/operators: see [`ADMIN_SETUP.md`](ADMIN_SETUP.md).

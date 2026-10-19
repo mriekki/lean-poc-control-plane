@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base="https://raw.githubusercontent.com/mriekki/lean-platform/main/"
+          base="https://raw.githubusercontent.com/mriekki/project-forge-platform/main/"
           curl --fail --silent --show-error "${base}chatgpt/current.json" -o "$RUNNER_TEMP/current.json"
           python - "$RUNNER_TEMP/current.json" <<'PY'
           import hashlib
@@ -61,7 +61,7 @@ jobs:
           descriptor = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
           if descriptor.get("schemaVersion") != 1 or descriptor.get("channel") != "stable":
               raise SystemExit("Unsupported public Project Forge bootstrap descriptor")
-          base = "https://raw.githubusercontent.com/mriekki/lean-platform/main/"
+          base = "https://raw.githubusercontent.com/mriekki/project-forge-platform/main/"
           for item in descriptor.get("documents", []):
               data = urllib.request.urlopen(base + item["path"], timeout=20).read()
               digest = hashlib.sha256(data).hexdigest()
@@ -82,7 +82,7 @@ jobs:
             const app = process.env.APP_OK === 'success';
             const contract = process.env.CONTRACT_OK === 'success';
             const ready = app && contract;
-            const setup = 'https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md';
+            const setup = 'https://github.com/mriekki/project-forge-platform/blob/main/chatgpt/SETUP.md';
             const body = [
               '# Project Forge readiness check',
               '',

@@ -183,7 +183,7 @@ Builders do not configure these values. Administrator setup is documented in `do
 Project Forge overview:
 
 ```text
-https://github.com/mriekki/lean-platform/blob/main/WELCOME.md
+https://github.com/mriekki/project-forge-platform/blob/main/WELCOME.md
 ```
 
 Builder GitHub onboarding:
@@ -195,13 +195,13 @@ https://github.com/mriekki/project-forge-control-plane/blob/main/docs/SETUP.md
 ChatGPT one-time setup:
 
 ```text
-https://github.com/mriekki/lean-platform/blob/main/chatgpt/SETUP.md
+https://github.com/mriekki/project-forge-platform/blob/main/chatgpt/SETUP.md
 ```
 
 Low-level public bootstrap entrypoint:
 
 ```text
-https://github.com/mriekki/lean-platform/blob/main/chatgpt/START_HERE.md
+https://github.com/mriekki/project-forge-platform/blob/main/chatgpt/START_HERE.md
 ```
 
 New Builders should use the invitation + Project Forge public onboarding path. They do not need legacy handoff files or direct access to private Bootstrap/Core repositories.
