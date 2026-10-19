@@ -13,11 +13,11 @@ PUBLIC_FILES = [
 
 
 class ProjectForgePublicIdentityTests(unittest.TestCase):
-    def test_public_surfaces_use_project_forge_app_name(self) -> None:
+    def test_public_surfaces_use_project_forge_builder_app_name(self) -> None:
         for path in PUBLIC_FILES:
             text = path.read_text(encoding="utf-8")
             self.assertNotIn("Lean POC Generator", text, str(path))
-            self.assertIn("Project Forge", text, str(path))
+            self.assertIn("Project Forge Builder", text, str(path))
 
     def test_public_surfaces_use_canonical_control_plane_repository(self) -> None:
         canonical = "mriekki/project-forge-control-plane"
