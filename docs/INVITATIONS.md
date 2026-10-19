@@ -8,7 +8,7 @@ Canonical Control Plane repository:
 mriekki/project-forge-control-plane
 ```
 
-The public GitHub App display name is **Project Forge**. Technical compatibility identifiers such as `[invite-lean]`, `/accept-lean`, `poc-author`, `[generate-poc]`, and `POC_BOOTSTRAP.json` remain stable.
+The public GitHub App display name is **Project Forge Builder**. Technical compatibility identifiers such as `[invite-lean]`, `/accept-lean`, `poc-author`, `[generate-poc]`, and `POC_BOOTSTRAP.json` remain stable.
 
 The onboarding model separates three questions:
 
@@ -59,21 +59,21 @@ The issue URL is the invitation/onboarding portal. The notification and issue in
 
 ```text
 1. Open the Project Forge invitation issue.
-2. Install/approve the Project Forge GitHub App if prompted.
+2. Install/approve the Project Forge Builder GitHub App if prompted.
 3. In that same issue, add a new comment containing exactly:
    /accept-lean
 ```
 
 The invited Builder should not need to understand Control Plane, Bootstrap, package, or contract internals before accepting.
 
-For the smoothest flow, install Project Forge for all repositories in the invited account. Exact workflow tokens remain scoped to the repository being operated on. Selecting individual repositories is supported, but each newly created Project repository must then be added before generation/update operations can use it.
+For the smoothest flow, install Project Forge Builder for all repositories in the invited account. Exact workflow tokens remain scoped to the repository being operated on. Selecting individual repositories is supported, but each newly created Project repository must then be added before generation/update operations can use it.
 
 The claim workflow verifies:
 
 - the invitation was opened by a currently authorized admin;
 - the commenter exactly matches the invited owner;
 - the invitation is still inside the configured claim window;
-- the Project Forge GitHub App installation can be minted/verified for that owner.
+- the Project Forge Builder GitHub App installation can be minted/verified for that owner.
 
 Only then does it activate the developer registry and compatibility allowlist.
 
@@ -88,7 +88,7 @@ Successful `/accept-lean` performs the normal readiness check automatically:
 ```text
 PENDING
 → identity verified
-→ Project Forge GitHub App verified
+→ Project Forge Builder GitHub App verified
 → ACTIVE
 → public Project Forge contract verified
 → READY FOR PROJECT FORGE
@@ -104,7 +104,7 @@ An already-ACTIVE Builder without an invitation issue can instead open:
 [lean-doctor] github-owner
 ```
 
-The readiness check verifies ACTIVE registry state, Project Forge App availability, and the SHA-256-pinned public Project Forge contract.
+The readiness check verifies ACTIVE registry state, Project Forge Builder App availability, and the SHA-256-pinned public Project Forge contract.
 
 After readiness, the Builder configures a ChatGPT coding Project once using the public setup guide, then starts normal work with:
 
@@ -129,7 +129,7 @@ The test portal reproduces:
 ```text
 Project Forge overview
 → invitation message preview
-→ Project Forge GitHub App page
+→ Project Forge Builder GitHub App page
 → /accept-lean
 → GitHub identity verification
 → App installation verification
@@ -179,7 +179,7 @@ Configure repository variable:
 APP_INSTALL_URL
 ```
 
-to the actual **Project Forge** GitHub App installation URL. If it is absent, invitations fall back to the Control Plane setup documentation.
+to the actual **Project Forge Builder** GitHub App installation URL. If it is absent, invitations fall back to the Control Plane setup documentation.
 
 `APP_CLIENT_ID` and `APP_PRIVATE_KEY` remain the workflow credentials. Renaming the App display name does not require rotating them.
 
