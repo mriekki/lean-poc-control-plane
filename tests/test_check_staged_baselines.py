@@ -31,13 +31,13 @@ def component_metadata() -> dict[str, dict[str, str]]:
         "core": {
             "repository": "mriekki/project-forge-core",
             "commit": "a" * 40,
-            "version": "1.10.0",
+            "version": "2.0.0",
             "distribution": "greenfield-workspace",
         },
         "deployment": {
             "repository": "mriekki/project-forge-deployment-kit",
             "commit": "b" * 40,
-            "distribution": "greenfield-poc",
+            "distribution": "greenfield-project",
         },
     }
 
@@ -47,10 +47,10 @@ def write_manifest_and_project_forge_baseline(root: Path, components: dict[str, 
         root / "POC_BOOTSTRAP.json",
         {
             "generation": {
-                "project_forge": {
+                "project-forge": {
                     "package": "@mriekki/project-forge",
-                    "version": "0.1.0",
-                    "profile": "greenfield-poc",
+                    "version": "1.0.0",
+                    "profile": "greenfield-project",
                     "integrity": "sha512-test",
                 }
             }
@@ -61,8 +61,8 @@ def write_manifest_and_project_forge_baseline(root: Path, components: dict[str, 
         {
             "schemaVersion": 1,
             "package": "@mriekki/project-forge",
-            "version": "0.1.0",
-            "profile": "greenfield-poc",
+            "version": "1.0.0",
+            "profile": "greenfield-project",
             "components": components,
         },
     )
@@ -76,7 +76,7 @@ def write_core_baseline(root: Path, path: str, content: bytes) -> str:
             "schemaVersion": 1,
             "coreRepository": "mriekki/project-forge-core",
             "coreCommit": "a" * 40,
-            "coreVersion": "1.10.0",
+            "coreVersion": "2.0.0",
             "distribution": "greenfield-workspace",
             "managedPaths": [
                 {
@@ -98,7 +98,7 @@ def write_deployment_baseline(root: Path, path: str, content: bytes) -> str:
             "schemaVersion": 1,
             "deploymentKitRepository": "mriekki/project-forge-deployment-kit",
             "deploymentKitCommit": "b" * 40,
-            "distribution": "greenfield-poc",
+            "distribution": "greenfield-project",
             "managedPaths": [
                 {
                     "source": path,
