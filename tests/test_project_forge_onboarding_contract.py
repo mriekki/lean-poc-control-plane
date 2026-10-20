@@ -13,8 +13,8 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("Install Project Forge Builder", text)
         self.assertIn("Accept this invitation", text)
         self.assertIn("add a new comment", text)
-        self.assertIn("/accept-lean", text)
-        self.assertNotIn("After activation, comment \\`/lean-doctor\\`", text)
+        self.assertIn("/accept-project-forge", text)
+        self.assertNotIn("After activation, comment \\`/project-forge-doctor\\`", text)
 
     def test_invitation_derives_app_install_url_without_admin_doc_fallback(self):
         text = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
@@ -28,7 +28,7 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         text = (ROOT / "docs" / "SETUP.md").read_text(encoding="utf-8")
         self.assertIn("Project Forge Builder Setup", text)
         self.assertIn("Install Project Forge Builder", text)
-        self.assertIn("/accept-lean", text)
+        self.assertIn("/accept-project-forge", text)
         self.assertIn("More about Project Forge", text)
         self.assertNotIn("GitHub App registration", text)
         self.assertNotIn("Control Plane Actions configuration", text)
@@ -47,7 +47,7 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("Automatically verify public Project Forge contract", text)
         self.assertIn("Project Forge is ready", text)
         self.assertIn("New Project: <your idea>", text)
-        self.assertIn("/lean-doctor", text)
+        self.assertIn("/project-forge-doctor", text)
 
     def test_doctor_is_retry_path_with_new_project_language(self):
         text = (ROOT / ".github" / "workflows" / "onboarding-doctor.yml").read_text(encoding="utf-8")
@@ -55,13 +55,12 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("READY FOR PROJECT FORGE", text)
         self.assertIn("New Project: <idea>", text)
 
-    def test_invitation_docs_preserve_technical_compatibility_identifiers(self):
+    def test_invitation_docs_use_canonical_identifiers(self):
         text = (ROOT / "docs" / "INVITATIONS.md").read_text(encoding="utf-8")
         self.assertIn("Project Forge Developer Invitations", text)
         self.assertIn("poc-author", text)
-        self.assertIn("[invite-lean]", text)
-        self.assertIn("New POC:", text)
-        self.assertIn("compatibility alias", text)
+        self.assertIn("[invite-project-forge]", text)
+        self.assertNotIn("New POC:", text)
 
     def test_test_mode_has_clear_preview_and_non_authorizing_result(self):
         invite = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
@@ -71,7 +70,7 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("startsWith(github.event.issue.title, '[test-invite-forge]')", invite)
         self.assertIn("Invitation message preview", invite)
         self.assertIn("Open your invitation issue", invite)
-        self.assertIn("add a new comment containing exactly: /accept-lean", invite)
+        self.assertIn("add a new comment containing exactly: /accept-project-forge", invite)
         self.assertIn("TEST MODE — no access or authorization will be granted or changed", invite)
         self.assertIn("[test-invite-forge]", claim)
         self.assertIn("TEST READY FOR PROJECT FORGE", claim)

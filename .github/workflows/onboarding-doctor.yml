@@ -14,11 +14,11 @@ jobs:
   doctor:
     if: >-
       (github.event_name == 'issues' &&
-       startsWith(github.event.issue.title, '[lean-doctor] ')) ||
+       startsWith(github.event.issue.title, '[project-forge-doctor] ')) ||
       (github.event_name == 'issue_comment' &&
-       github.event.comment.body == '/lean-doctor' &&
-       (startsWith(github.event.issue.title, '[invite-lean] ') ||
-        startsWith(github.event.issue.title, '[lean-doctor] ')))
+       github.event.comment.body == '/project-forge-doctor' &&
+       (startsWith(github.event.issue.title, '[invite-project-forge] ') ||
+        startsWith(github.event.issue.title, '[project-forge-doctor] ')))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
               '',
               ready
                 ? 'READY FOR PROJECT FORGE — set up the ChatGPT coding Project once, then start with `New Project: <idea>`.'
-                : 'NOT READY — resolve the failed check(s), then comment `/lean-doctor` on this issue to retry.',
+                : 'NOT READY — resolve the failed check(s), then comment `/project-forge-doctor` on this issue to retry.',
               '',
               `ChatGPT setup: ${setup}`,
             ].join('\n');

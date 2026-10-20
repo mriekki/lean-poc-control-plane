@@ -54,7 +54,7 @@ class FilterDiffCheckOutputTests(unittest.TestCase):
 
 class GenerateWorkflowContractTests(unittest.TestCase):
     def test_generation_uses_markdown_aware_staged_diff_check(self):
-        workflow = Path(".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        workflow = Path(".github/workflows/generate-project.yml").read_text(encoding="utf-8")
 
         self.assertIn('python tools/check_staged_diff.py --root "$target"', workflow)
         self.assertNotIn('git -C "$target" diff --cached --check', workflow)

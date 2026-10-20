@@ -2,7 +2,7 @@
 
 > **For Project Forge administrators/operators only.** Project Builders do not need to configure this repository, GitHub Actions variables/secrets, or the GitHub App. Builder onboarding is intentionally kept separate in [`SETUP.md`](SETUP.md).
 
-This repository is the public orchestration surface for Project Forge generation, Builder invitation/authorization, and supported remote update workflows. Reusable discovery/generation logic remains in `mriekki/project-forge-bootstrap`; the public `@mriekki/lean` package remains the normal reusable-asset delivery boundary for generated Projects.
+This repository is the public orchestration surface for Project Forge generation, Builder invitation/authorization, and supported remote update workflows. Reusable discovery/generation logic remains in `mriekki/project-forge-bootstrap`; the public `@mriekki/project-forge` package remains the normal reusable-asset delivery boundary for generated Projects.
 
 Canonical repository identity:
 
@@ -17,11 +17,11 @@ Technical compatibility commands and schema identifiers remain unchanged.
 Public operational issues contain only safe identities:
 
 ```text
-[invite-lean] github-owner
+[invite-project-forge] github-owner
 [test-invite-forge]
-[lean-doctor] github-owner
-[revoke-lean] github-owner
-[generate-poc] owner/repository
+[project-forge-doctor] github-owner
+[revoke-project-forge] github-owner
+[generate-project] owner/repository
 [sync-core] owner/repository
 ```
 
@@ -90,16 +90,16 @@ Normal onboarding uses the invitation workflow; do not manually add a normal Bui
 An ACTIVE admin creates one empty-body issue:
 
 ```text
-[invite-lean] github-owner
+[invite-project-forge] github-owner
 ```
 
-The invited Builder follows the concise instructions in the invitation issue and [`SETUP.md`](SETUP.md): install/approve **Project Forge Builder** if needed, then comment exactly `/accept-lean` in the invitation issue.
+The invited Builder follows the concise instructions in the invitation issue and [`SETUP.md`](SETUP.md): install/approve **Project Forge Builder** if needed, then comment exactly `/accept-project-forge` in the invitation issue.
 
-The claim workflow verifies identity, invitation lifetime, and Project Forge Builder App installation before updating the developer registry and compatibility allowlist.
+The claim workflow verifies identity, invitation lifetime, and Project Forge Builder App installation before updating the developer registry and authorization projection.
 
-The invited owner can decline with `/decline-lean`. Unclaimed invitations expire after the configured claim window.
+The invited owner can decline with `/decline-project-forge`. Unclaimed invitations expire after the configured claim window.
 
-Successful activation automatically verifies the public Project Forge ChatGPT contract. `/lean-doctor` remains the retry/diagnostic path if readiness later needs attention.
+Successful activation automatically verifies the public Project Forge ChatGPT contract. `/project-forge-doctor` remains the retry/diagnostic path if readiness later needs attention.
 
 ## Admin onboarding self-test
 
@@ -109,7 +109,7 @@ Choose **Issues → New issue → Test Project Forge onboarding** and submit the
 [test-invite-forge]
 ```
 
-The workflow infers the target from the active admin who opened the issue. It cannot target another user and never mutates authorization state. Continue by adding `/accept-lean` to that same test issue when instructed.
+The workflow infers the target from the active admin who opened the issue. It cannot target another user and never mutates authorization state. Continue by adding `/accept-project-forge` to that same test issue when instructed.
 
 ## Per-Project generation request contract
 
@@ -118,8 +118,8 @@ After discovery and Project Definition approval:
 1. the Builder owns a private, safe target repository;
 2. ChatGPT verifies exact GitHub owner/target safety;
 3. only the approved schema-v2 `POC_BOOTSTRAP.json` seed is written before generation;
-4. the manifest pins exact Bootstrap provenance and an exact `@mriekki/lean` package/version/profile;
-5. ChatGPT opens an empty-body public issue here titled `[generate-poc] owner/repository`;
+4. the manifest pins exact Bootstrap provenance and an exact `@mriekki/project-forge` package/version/profile;
+5. ChatGPT opens an empty-body public issue here titled `[generate-project] owner/repository`;
 6. the author must equal the target owner and be ACTIVE with generation authorization;
 7. the workflow obtains a Bootstrap-only source token and exact-target token;
 8. Bootstrap validates the private manifest and resolves machine provenance such as registry integrity;
@@ -145,4 +145,4 @@ with an empty body. The workflow validates authorization and baseline integrity,
 
 ## Repository rename boundary
 
-The canonical repository is `mriekki/project-forge-control-plane`. Historical `mriekki/lean-poc-control-plane` links may redirect at GitHub, but new documentation, contracts, and tooling must emit the canonical Project Forge repository identity. Compatibility command/schema identifiers are intentionally unchanged.
+The canonical repository is `mriekki/project-forge-control-plane`. Historical `mriekki/project-forge-control-plane` links may redirect at GitHub, but new documentation, contracts, and tooling must emit the canonical Project Forge repository identity. Compatibility command/schema identifiers are intentionally unchanged.

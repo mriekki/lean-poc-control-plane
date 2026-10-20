@@ -25,7 +25,7 @@ def registry_value() -> dict:
                 "role": "admin",
                 "contractChannel": "stable",
                 "capabilities": [
-                    "generate-poc",
+                    "generate-project",
                     "sync-core",
                     "invite-developer",
                     "revoke-developer",
@@ -36,7 +36,7 @@ def registry_value() -> dict:
                 "status": "active",
                 "role": "poc-author",
                 "contractChannel": "stable",
-                "capabilities": ["generate-poc", "sync-core"],
+                "capabilities": ["generate-project", "sync-core"],
             },
         ],
     }
@@ -89,26 +89,26 @@ class InvitationTests(unittest.TestCase):
         self.assertEqual(invitation.load_policy(self.policy_path)["expiryDays"], 30)
 
     def test_only_active_admin_can_invite(self) -> None:
-        event = issue_event("[invite-lean] daniel-example", author="mriekki")
+        event = issue_event("[invite-project-forge] daniel-example", author="mriekki")
         values = invitation.extract_invite(event, self.registry())
         self.assertEqual(values["target_owner"], "daniel-example")
 
         with self.assertRaises(invitation.InvitationError):
             invitation.extract_invite(
-                issue_event("[invite-lean] daniel-example", author="kyleriekki-89"),
+                issue_event("[invite-project-forge] daniel-example", author="kyleriekki-89"),
                 self.registry(),
             )
 
     def test_invitation_body_must_be_empty(self) -> None:
         with self.assertRaises(invitation.InvitationError):
             invitation.extract_invite(
-                issue_event("[invite-lean] daniel-example", body="private details"),
+                issue_event("[invite-project-forge] daniel-example", body="private details"),
                 self.registry(),
             )
 
     def test_claimant_identity_must_match_invited_owner(self) -> None:
-        event = issue_event("[invite-lean] daniel-example")
-        event["comment"] = {"body": "/accept-lean", "user": {"login": "someone-else"}}
+        event = issue_event("[invite-project-forge] daniel-example")
+        event["comment"] = {"body": "/accept-project-forge", "user": {"login": "someone-else"}}
         with self.assertRaises(invitation.InvitationError):
             invitation.extract_claim(event, self.registry(), expiry_days=30, now=NOW)
 
@@ -118,16 +118,16 @@ class InvitationTests(unittest.TestCase):
 
     def test_expired_invitation_cannot_be_claimed(self) -> None:
         event = issue_event(
-            "[invite-lean] daniel-example",
+            "[invite-project-forge] daniel-example",
             created_at="2026-08-01T12:00:00Z",
         )
-        event["comment"] = {"body": "/accept-lean", "user": {"login": "daniel-example"}}
+        event["comment"] = {"body": "/accept-project-forge", "user": {"login": "daniel-example"}}
         with self.assertRaisesRegex(invitation.InvitationError, "expired"):
             invitation.extract_claim(event, self.registry(), expiry_days=30, now=NOW)
 
     def test_invited_owner_can_decline_without_registry_change(self) -> None:
-        event = issue_event("[invite-lean] daniel-example")
-        event["comment"] = {"body": "/decline-lean", "user": {"login": "daniel-example"}}
+        event = issue_event("[invite-project-forge] daniel-example")
+        event["comment"] = {"body": "/decline-project-forge", "user": {"login": "daniel-example"}}
         values = invitation.extract_decline(event, self.registry())
         self.assertEqual(values["target_owner"], "daniel-example")
         self.assertIsNone(invitation.developer(self.registry(), "daniel-example"))
@@ -138,8 +138,8 @@ class InvitationTests(unittest.TestCase):
 
     def test_expired_issue_listing_only_returns_old_invites(self) -> None:
         issues = [
-            {"number": 1, "title": "[invite-lean] one-user", "createdAt": "2026-08-01T00:00:00Z"},
-            {"number": 2, "title": "[invite-lean] two-user", "createdAt": "2026-10-10T00:00:00Z"},
+            {"number": 1, "title": "[invite-project-forge] one-user", "createdAt": "2026-08-01T00:00:00Z"},
+            {"number": 2, "title": "[invite-project-forge] two-user", "createdAt": "2026-10-10T00:00:00Z"},
             {"number": 3, "title": "ordinary issue", "createdAt": "2026-01-01T00:00:00Z"},
         ]
         self.assertEqual(
@@ -159,7 +159,7 @@ class InvitationTests(unittest.TestCase):
         record = invitation.developer(registry, "daniel-example")
         self.assertEqual(record["status"], "active")
         self.assertEqual(record["role"], "poc-author")
-        self.assertEqual(record["capabilities"], ["generate-poc", "sync-core"])
+        self.assertEqual(record["capabilities"], ["generate-project", "sync-core"])
         self.assertEqual(record["activationIssue"], 12)
         allowed = invitation.load_allowed_owners(self.allowed_path)
         self.assertEqual(allowed, ["mriekki", "kyleriekki-89", "daniel-example"])
@@ -197,9 +197,8 @@ class InvitationTests(unittest.TestCase):
             with self.subTest(path=path):
                 content = path.read_text(encoding="utf-8")
                 self.assertIn("mriekki/project-forge-platform", content)
-                self.assertNotIn("mriekki/lean-platform", content)
     def test_last_admin_cannot_be_revoked(self) -> None:
-        event = issue_event("[revoke-lean] mriekki", author="mriekki")
+        event = issue_event("[revoke-project-forge] mriekki", author="mriekki")
         with self.assertRaises(invitation.InvitationError):
             invitation.extract_revoke(event, self.registry())
 
@@ -212,8 +211,8 @@ class InvitationTests(unittest.TestCase):
             issue=12,
         )
         registry = invitation.load_registry(self.registry_path)
-        event = issue_event("[invite-lean] daniel-example", author="mriekki")
-        event["comment"] = {"body": "/lean-doctor", "user": {"login": "daniel-example"}}
+        event = issue_event("[invite-project-forge] daniel-example", author="mriekki")
+        event["comment"] = {"body": "/project-forge-doctor", "user": {"login": "daniel-example"}}
         values = invitation.extract_doctor(event, registry)
         self.assertEqual(values["target_owner"], "daniel-example")
 

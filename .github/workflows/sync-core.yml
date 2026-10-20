@@ -74,7 +74,7 @@ jobs:
           import json
           from pathlib import Path
           data = json.loads(Path('core/COMPATIBILITY.json').read_text(encoding='utf-8'))
-          print(f"version={data['leanCoreVersion']}")
+          print(f"version={data['projectForgeCoreVersion']}")
           PY
 
       - name: Checkout private target consumer
@@ -95,12 +95,12 @@ jobs:
           import re
           from pathlib import Path
 
-          lean_baseline_path = Path('target/LEAN_BASELINE.json')
-          if lean_baseline_path.is_file():
+          project_forge_baseline_path = Path('target/PROJECT_FORGE_BASELINE.json')
+          if project_forge_baseline_path.is_file():
               raise SystemExit(
-                  'Refusing direct Core sync for package-managed Lean consumer: '
-                  'LEAN_BASELINE.json is present. Use /lean-update with an exact published '
-                  '@mriekki/lean package instead.'
+                  'Refusing direct Core sync for package-managed Project Forge consumer: '
+                  'PROJECT_FORGE_BASELINE.json is present. Use /project-forge-update with an exact published '
+                  '@mriekki/project-forge package instead.'
               )
 
           baseline_path = Path('target/CORE_BASELINE.json')
@@ -109,8 +109,8 @@ jobs:
           baseline = json.loads(baseline_path.read_text(encoding='utf-8'))
           if baseline.get('schemaVersion') != 1:
               raise SystemExit('Unsupported CORE_BASELINE.json schemaVersion')
-          if baseline.get('coreRepository') != 'mriekki/lean-agentic-core':
-              raise SystemExit('Target baseline does not belong to mriekki/lean-agentic-core')
+          if baseline.get('coreRepository') != 'mriekki/project-forge-core':
+              raise SystemExit('Target baseline does not belong to mriekki/project-forge-core')
           if baseline.get('distribution') != 'greenfield-workspace':
               raise SystemExit('Remote control-plane sync currently supports greenfield-workspace consumers only')
           commit = str(baseline.get('coreCommit') or '')
@@ -213,7 +213,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git -C target config user.name "lean-poc-control-plane[bot]"
+          git -C target config user.name "project-forge-control-plane[bot]"
           git -C target config user.email "noreply@github.com"
           git -C target add -A
           git -C target diff --cached --check

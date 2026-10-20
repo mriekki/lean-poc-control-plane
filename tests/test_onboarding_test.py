@@ -28,7 +28,7 @@ def registry_value() -> dict:
                 "role": "admin",
                 "contractChannel": "stable",
                 "capabilities": [
-                    "generate-poc",
+                    "generate-project",
                     "sync-core",
                     "invite-developer",
                     "revoke-developer",
@@ -39,7 +39,7 @@ def registry_value() -> dict:
                 "status": "active",
                 "role": "poc-author",
                 "contractChannel": "stable",
-                "capabilities": ["generate-poc", "sync-core"],
+                "capabilities": ["generate-project", "sync-core"],
             },
         ],
     }
@@ -145,7 +145,7 @@ class OnboardingTestModeTests(unittest.TestCase):
     def test_acceptance_requires_exact_self_identity(self, _expired) -> None:
         event = issue_event("[test-invite-forge] mriekki")
         event["comment"] = {
-            "body": "/accept-lean",
+            "body": "/accept-project-forge",
             "user": {"login": "builder-example"},
         }
         with self.assertRaisesRegex(invitation.InvitationError, "only be accepted"):
@@ -167,7 +167,7 @@ class OnboardingTestModeTests(unittest.TestCase):
     def test_template_title_can_be_accepted_by_same_admin(self, _expired) -> None:
         event = issue_event("[test-invite-forge]")
         event["comment"] = {
-            "body": "/accept-lean",
+            "body": "/accept-project-forge",
             "user": {"login": "mriekki"},
         }
         values = onboarding_test.extract_test_claim(
@@ -182,7 +182,7 @@ class OnboardingTestModeTests(unittest.TestCase):
     def test_expired_test_must_be_recreated(self, _expired) -> None:
         event = issue_event("[test-invite-forge] mriekki")
         event["comment"] = {
-            "body": "/accept-lean",
+            "body": "/accept-project-forge",
             "user": {"login": "mriekki"},
         }
         with self.assertRaisesRegex(invitation.InvitationError, "expired"):
@@ -205,7 +205,7 @@ class OnboardingTestModeTests(unittest.TestCase):
         )
         event = issue_event("[test-invite-forge] mriekki")
         event["comment"] = {
-            "body": "/accept-lean",
+            "body": "/accept-project-forge",
             "user": {"login": "mriekki"},
         }
         onboarding_test.extract_test_claim(event, registry, expiry_days=30)

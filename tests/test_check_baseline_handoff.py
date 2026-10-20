@@ -30,20 +30,20 @@ def baseline_documents(*, overlap: bool = False) -> dict[str, dict]:
     core_path = "shared.txt" if overlap else "core.txt"
     deployment_path = "shared.txt" if overlap else "deployment.txt"
     return {
-        "LEAN_BASELINE.json": {
+        "PROJECT_FORGE_BASELINE.json": {
             "schemaVersion": 1,
-            "package": "@mriekki/lean",
+            "package": "@mriekki/project-forge",
             "version": "0.1.0",
             "profile": "greenfield-poc",
             "components": {
                 "core": {
-                    "repository": "mriekki/lean-agentic-core",
+                    "repository": "mriekki/project-forge-core",
                     "commit": "a" * 40,
                     "version": "1.10.0",
                     "distribution": "greenfield-workspace",
                 },
                 "deployment": {
-                    "repository": "mriekki/lean-poc-deployment-kit",
+                    "repository": "mriekki/project-forge-deployment-kit",
                     "commit": "b" * 40,
                     "distribution": "greenfield-poc",
                 },
@@ -88,7 +88,7 @@ class BaselineHandoffTests(unittest.TestCase):
             target = root / "target"
             write_documents(generated, baseline_documents())
             initialize_target(target)
-            for name in ("LEAN_BASELINE.json", "CORE_BASELINE.json", "DEPLOYMENT_BASELINE.json"):
+            for name in ("PROJECT_FORGE_BASELINE.json", "CORE_BASELINE.json", "DEPLOYMENT_BASELINE.json"):
                 shutil.copy2(generated / name, target / name)
 
             validate_generated(generated)
@@ -114,7 +114,7 @@ class BaselineHandoffTests(unittest.TestCase):
             target = root / "target"
             write_documents(generated, baseline_documents())
             target.mkdir()
-            for name in ("LEAN_BASELINE.json", "CORE_BASELINE.json", "DEPLOYMENT_BASELINE.json"):
+            for name in ("PROJECT_FORGE_BASELINE.json", "CORE_BASELINE.json", "DEPLOYMENT_BASELINE.json"):
                 shutil.copy2(generated / name, target / name)
             (target / "CORE_BASELINE.json").write_bytes(
                 (target / "CORE_BASELINE.json").read_bytes() + b"\n"
@@ -134,7 +134,7 @@ class BaselineHandoffTests(unittest.TestCase):
             documents = baseline_documents()
             write_documents(generated, documents, crlf=True)
             initialize_target(target, "*.json text eol=lf\n")
-            for name in ("LEAN_BASELINE.json", "CORE_BASELINE.json", "DEPLOYMENT_BASELINE.json"):
+            for name in ("PROJECT_FORGE_BASELINE.json", "CORE_BASELINE.json", "DEPLOYMENT_BASELINE.json"):
                 shutil.copy2(generated / name, target / name)
 
             validate_copied(generated, target)
@@ -142,14 +142,14 @@ class BaselineHandoffTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                 BaselineHandoffError,
-                "target→index baseline bytes changed: LEAN_BASELINE.json",
+                "target→index baseline bytes changed: PROJECT_FORGE_BASELINE.json",
             ):
                 validate_staged(generated, target)
 
 
 class GenerateWorkflowHandoffContractTests(unittest.TestCase):
     def test_workflow_checks_all_handoff_boundaries_before_staged_baseline_validation(self):
-        workflow = Path(".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        workflow = Path(".github/workflows/generate-project.yml").read_text(encoding="utf-8")
         generated = 'python tools/check_baseline_handoff.py generated --generated "$RUNNER_TEMP/generated"'
         copied = 'python tools/check_baseline_handoff.py copied --generated "$generated" --target "$target"'
         staged = 'python tools/check_baseline_handoff.py staged --generated "$generated" --target "$target"'

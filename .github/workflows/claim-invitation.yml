@@ -9,14 +9,14 @@ permissions:
   issues: write
 
 concurrency:
-  group: lean-developer-registry
+  group: project-forge-developer-registry
   cancel-in-progress: false
 
 jobs:
   claim:
     if: >-
-      startsWith(github.event.issue.title, '[invite-lean] ') &&
-      github.event.comment.body == '/accept-lean'
+      startsWith(github.event.issue.title, '[invite-project-forge] ') &&
+      github.event.comment.body == '/accept-project-forge'
     permissions:
       contents: write
       issues: write
@@ -57,7 +57,7 @@ jobs:
               '',
               'Your GitHub identity matched the invitation, but Project Forge could not verify its GitHub App installation for this account.',
               '',
-              'Install/approve the **Project Forge Builder** GitHub App for this account, then comment `/accept-lean` again.',
+              'Install/approve the **Project Forge Builder** GitHub App for this account, then comment `/accept-project-forge` again.',
               '',
               'No developer authorization was activated.',
             ].join('\n');
@@ -164,7 +164,7 @@ jobs:
               '',
               'The public Project Forge contract could not be verified automatically.',
               '',
-              'Resolve the public-contract availability/integrity issue, then comment `/lean-doctor` on this issue to retry the readiness check.',
+              'Resolve the public-contract availability/integrity issue, then comment `/project-forge-doctor` on this issue to retry the readiness check.',
               '',
               `Project Forge overview: ${welcome}`,
             ];
@@ -187,7 +187,7 @@ jobs:
   test-claim:
     if: >-
       startsWith(github.event.issue.title, '[test-invite-forge]') &&
-      github.event.comment.body == '/accept-lean'
+      github.event.comment.body == '/accept-project-forge'
     permissions:
       contents: read
       issues: write
@@ -272,9 +272,9 @@ jobs:
               '',
               ready
                 ? `The onboarding mechanics are ready to rehearse through the one-time ChatGPT setup: ${setup}`
-                : 'Resolve the failed check above, then comment `/accept-lean` again on this test issue.',
+                : 'Resolve the failed check above, then comment `/accept-project-forge` again on this test issue.',
               '',
-              'A real invitation still requires a separate `[invite-lean] <github-owner>` issue and the real invited identity. This test grants no future authorization.',
+              'A real invitation still requires a separate `[invite-project-forge] <github-owner>` issue and the real invited identity. This test grants no future authorization.',
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,

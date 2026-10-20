@@ -1,4 +1,4 @@
-name: Expire Lean Invitations
+name: Expire Project Forge Invitations
 
 on:
   schedule:
@@ -44,7 +44,7 @@ jobs:
             [ -z "$issue" ] && continue
             gh issue comment "$issue" \
               --repo "$GITHUB_REPOSITORY" \
-              --body "LEAN INVITATION — EXPIRED\n\nThe configured claim window elapsed. No developer authorization was changed. Ask a Lean admin for a new invitation if access is still wanted."
+              --body "PROJECT_FORGE INVITATION — EXPIRED\n\nThe configured claim window elapsed. No developer authorization was changed. Ask a Project Forge admin for a new invitation if access is still wanted."
             gh issue close "$issue" \
               --repo "$GITHUB_REPOSITORY" \
               --reason "not planned"

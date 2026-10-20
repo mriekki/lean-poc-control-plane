@@ -8,7 +8,7 @@ Canonical Control Plane repository:
 mriekki/project-forge-control-plane
 ```
 
-The public GitHub App display name is **Project Forge Builder**. Technical compatibility identifiers such as `[invite-lean]`, `/accept-lean`, `poc-author`, `[generate-poc]`, and `POC_BOOTSTRAP.json` remain stable.
+The public GitHub App display name is **Project Forge Builder**. Canonical technical identifiers include `[invite-project-forge]`, `/accept-project-forge`, `poc-author`, `[generate-project]`, and `POC_BOOTSTRAP.json`.
 
 The onboarding model separates three questions:
 
@@ -39,9 +39,9 @@ The self-test is zero-input: submit the prefilled empty-body issue. The workflow
 Current technical roles remain:
 
 - `admin` — normal Project Builder capabilities plus invitation/revocation administration;
-- `poc-author` — compatibility identifier for a normal Project Builder with generation and supported update/sync authorization.
+- `poc-author` — role identifier for a normal Project Builder with generation and supported update/sync authorization.
 
-`config/allowed-owners.json` remains a generated compatibility projection for existing validators and must mirror ACTIVE developers with `generate-poc`. CI validates that invariant.
+`config/allowed-owners.json` remains a generated authorization projection for existing validators and must mirror ACTIVE developers with `generate-project`. CI validates that invariant.
 
 No credential, private Project definition, private repository content, or secret belongs in either file.
 
@@ -50,7 +50,7 @@ No credential, private Project definition, private repository content, or secret
 An active admin creates one public issue with an empty body:
 
 ```text
-[invite-lean] github-owner
+[invite-project-forge] github-owner
 ```
 
 Creating that issue is the meaningful administrative authorization gate.
@@ -61,7 +61,7 @@ The issue URL is the invitation/onboarding portal. The notification and issue in
 1. Open the Project Forge invitation issue.
 2. Install/approve the Project Forge Builder GitHub App if needed.
 3. In that same issue, add a new comment containing exactly:
-   /accept-lean
+   /accept-project-forge
 ```
 
 The invited Builder does not need to understand or configure the Control Plane, GitHub Actions, Bootstrap, package plumbing, App credentials, or contract internals before accepting. Builder-facing guidance lives in `docs/SETUP.md`; operator setup lives separately in `docs/ADMIN_SETUP.md`.
@@ -77,15 +77,15 @@ The claim workflow verifies:
 - the invitation is still inside the configured claim window;
 - the Project Forge Builder GitHub App installation can be minted/verified for that owner.
 
-Only then does it activate the developer registry and compatibility allowlist.
+Only then does it activate the developer registry and authorization projection.
 
 Knowing or forwarding an invitation URL does not grant authorization.
 
-The invited developer may instead comment `/decline-lean`; decline closes the invitation and makes no registry change.
+The invited developer may instead comment `/decline-project-forge`; decline closes the invitation and makes no registry change.
 
 ## Automatic readiness after activation
 
-Successful `/accept-lean` performs the normal readiness check automatically:
+Successful `/accept-project-forge` performs the normal readiness check automatically:
 
 ```text
 PENDING
@@ -98,12 +98,12 @@ PENDING
 
 The Builder should not need a separate doctor command on the happy path.
 
-If activation succeeds but the public contract cannot be verified, authorization remains ACTIVE and the invitation remains the recovery surface. After the underlying problem is fixed, the Builder or admin may comment `/lean-doctor`.
+If activation succeeds but the public contract cannot be verified, authorization remains ACTIVE and the invitation remains the recovery surface. After the underlying problem is fixed, the Builder or admin may comment `/project-forge-doctor`.
 
 An already-ACTIVE Builder without an invitation issue can instead open:
 
 ```text
-[lean-doctor] github-owner
+[project-forge-doctor] github-owner
 ```
 
 The readiness check verifies ACTIVE registry state, Project Forge Builder App availability, and the SHA-256-pinned public Project Forge contract.
@@ -114,7 +114,6 @@ After readiness, the Builder configures a ChatGPT coding Project once using the 
 New Project: <idea>
 ```
 
-`New POC:` remains a compatibility alias.
 
 ## Admin onboarding test mode
 
@@ -124,14 +123,14 @@ An active admin can rehearse onboarding before inviting a real Builder by submit
 [test-invite-forge]
 ```
 
-The opener identity is the test identity. The `/accept-lean` commenter must be that same active admin. A self-test cannot target another Builder.
+The opener identity is the test identity. The `/accept-project-forge` commenter must be that same active admin. A self-test cannot target another Builder.
 
 The test portal reproduces:
 
 ```text
 short invitation preview
 → direct Project Forge Builder GitHub App install page
-→ /accept-lean
+→ /accept-project-forge
 → GitHub identity verification
 → App installation verification
 → public Project Forge contract verification
@@ -142,7 +141,7 @@ The test is deliberately non-authorizing:
 
 - test claim repository contents permission is read-only;
 - no activation operation runs;
-- developer registry and compatibility allowlist are never written;
+- developer registry and authorization projection are never written;
 - no role/capability change occurs;
 - no Project repository is created/generated;
 - no deployment or tear-down path is available.
@@ -167,7 +166,7 @@ Expiration and decline never mutate developer authorization. A failed App check 
 An active admin creates an empty-body issue:
 
 ```text
-[revoke-lean] github-owner
+[revoke-project-forge] github-owner
 ```
 
 Revocation removes future Control Plane authorization only. It never deletes, transfers, disables, rewrites, or otherwise mutates repositories already owned by the Builder. The tooling refuses to revoke the last active admin.

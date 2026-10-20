@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed if generated Lean baseline JSON changes across publication handoff boundaries."""
+"""Fail closed if generated Project Forge baseline JSON changes across publication handoff boundaries."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from typing import Any
 
 
 BASELINE_FILES = (
-    "LEAN_BASELINE.json",
+    "PROJECT_FORGE_BASELINE.json",
     "CORE_BASELINE.json",
     "DEPLOYMENT_BASELINE.json",
 )
@@ -88,12 +88,12 @@ def validate_generated(generated: Path) -> dict[str, bytes]:
             "generated baseline ownership overlap: " + ", ".join(overlap)
         )
 
-    lean = _parse_json(values["LEAN_BASELINE.json"], "LEAN_BASELINE.json")
-    components = lean.get("components")
+    project_forge = _parse_json(values["PROJECT_FORGE_BASELINE.json"], "PROJECT_FORGE_BASELINE.json")
+    components = project_forge.get("components")
     if not isinstance(components, dict) or set(components) != {"core", "deployment"}:
         found = sorted(components) if isinstance(components, dict) else []
         raise BaselineHandoffError(
-            f"LEAN_BASELINE.json must contain exactly core and deployment components; found {found}"
+            f"PROJECT_FORGE_BASELINE.json must contain exactly core and deployment components; found {found}"
         )
 
     for name in BASELINE_FILES:

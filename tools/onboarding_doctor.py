@@ -8,7 +8,7 @@ from typing import Any
 
 import invitation
 
-DOCTOR_PREFIX = "[lean-doctor]"
+DOCTOR_PREFIX = "[project-forge-doctor]"
 
 
 class DoctorError(RuntimeError):
@@ -70,12 +70,12 @@ def extract_command(args: argparse.Namespace) -> int:
         raise DoctorError("Expected a GitHub event object")
     values = extract_request(event, registry)
     invitation.write_github_output(values)
-    print(f"Validated Lean onboarding doctor request for {values['target_owner']}")
+    print(f"Validated Project Forge onboarding doctor request for {values['target_owner']}")
     return 0
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate Lean onboarding doctor requests")
+    parser = argparse.ArgumentParser(description="Validate Project Forge onboarding doctor requests")
     sub = parser.add_subparsers(dest="command", required=True)
     extract = sub.add_parser("extract")
     extract.add_argument("--event", type=Path, required=True)

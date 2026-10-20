@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate staged Lean/component baseline hashes against Git index blobs.
+"""Validate staged Project Forge/component baseline hashes against Git index blobs.
 
 Generation validates package-managed bytes before copying them into the target checkout.
 This checker validates the *staged Git tree* immediately before commit/push so Git clean
@@ -67,7 +67,7 @@ def _staged_json(root: Path, path: str) -> dict[str, Any]:
 def _validate_component(
     root: Path,
     component: str,
-    lean_component: dict[str, Any],
+    project_forge_component: dict[str, Any],
     baseline_name: str,
     global_seen: dict[str, tuple[str, str]],
 ) -> int:
@@ -89,13 +89,13 @@ def _validate_component(
             "distribution": "distribution",
         }
     else:
-        raise StagedBaselineError(f"Unsupported Lean component in staged baseline: {component}")
+        raise StagedBaselineError(f"Unsupported Project Forge component in staged baseline: {component}")
 
-    for lean_key, baseline_key in fields.items():
-        expected = lean_component.get(lean_key)
+    for project_forge_key, baseline_key in fields.items():
+        expected = project_forge_component.get(project_forge_key)
         if expected is not None and baseline.get(baseline_key) != expected:
             raise StagedBaselineError(
-                f"Staged {baseline_name} {baseline_key} does not match staged LEAN_BASELINE.json"
+                f"Staged {baseline_name} {baseline_key} does not match staged PROJECT_FORGE_BASELINE.json"
             )
 
     managed = baseline.get("managedPaths")
@@ -137,32 +137,32 @@ def _validate_component(
 def validate_staged_baselines(root: Path) -> int:
     root = root.resolve()
     manifest = _staged_json(root, "POC_BOOTSTRAP.json")
-    approved = (manifest.get("generation") or {}).get("lean") or {}
-    lean = _staged_json(root, "LEAN_BASELINE.json")
+    approved = (manifest.get("generation") or {}).get("project_forge") or {}
+    project_forge = _staged_json(root, "PROJECT_FORGE_BASELINE.json")
 
-    if lean.get("schemaVersion") != 1:
-        raise StagedBaselineError("Unsupported staged LEAN_BASELINE.json schemaVersion")
+    if project_forge.get("schemaVersion") != 1:
+        raise StagedBaselineError("Unsupported staged PROJECT_FORGE_BASELINE.json schemaVersion")
     for key in ("package", "version", "profile"):
-        if lean.get(key) != approved.get(key):
+        if project_forge.get(key) != approved.get(key):
             raise StagedBaselineError(
-                f"Staged LEAN_BASELINE.json {key} does not match staged POC_BOOTSTRAP.json"
+                f"Staged PROJECT_FORGE_BASELINE.json {key} does not match staged POC_BOOTSTRAP.json"
             )
 
-    components = lean.get("components")
+    components = project_forge.get("components")
     if not isinstance(components, dict) or not components:
-        raise StagedBaselineError("Staged LEAN_BASELINE.json components is missing or empty")
+        raise StagedBaselineError("Staged PROJECT_FORGE_BASELINE.json components is missing or empty")
 
     global_seen: dict[str, tuple[str, str]] = {}
     total = 0
     for component, metadata in sorted(components.items()):
         if not isinstance(metadata, dict):
-            raise StagedBaselineError(f"Invalid staged Lean component metadata: {component}")
+            raise StagedBaselineError(f"Invalid staged Project Forge component metadata: {component}")
         if component == "core":
             baseline_name = "CORE_BASELINE.json"
         elif component == "deployment":
             baseline_name = "DEPLOYMENT_BASELINE.json"
         else:
-            raise StagedBaselineError(f"Unsupported staged Lean component: {component}")
+            raise StagedBaselineError(f"Unsupported staged Project Forge component: {component}")
         total += _validate_component(root, component, metadata, baseline_name, global_seen)
 
     return total
@@ -179,9 +179,9 @@ def main() -> int:
     try:
         total = validate_staged_baselines(args.root)
     except StagedBaselineError as exc:
-        print(f"FAIL staged Lean managed baselines: {exc}", file=sys.stderr)
+        print(f"FAIL staged Project Forge managed baselines: {exc}", file=sys.stderr)
         return 2
-    print(f"PASS staged Lean managed baselines ({total} files)")
+    print(f"PASS staged Project Forge managed baselines ({total} files)")
     return 0
 
 

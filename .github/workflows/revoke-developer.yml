@@ -9,12 +9,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: lean-developer-registry
+  group: project-forge-developer-registry
   cancel-in-progress: false
 
 jobs:
   revoke:
-    if: startsWith(github.event.issue.title, '[revoke-lean] ')
+    if: startsWith(github.event.issue.title, '[revoke-project-forge] ')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -10,16 +10,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
-INVITE_PREFIX = "[invite-lean]"
-REVOKE_PREFIX = "[revoke-lean]"
-ACCEPT_COMMAND = "/accept-lean"
-DECLINE_COMMAND = "/decline-lean"
-DOCTOR_COMMAND = "/lean-doctor"
+INVITE_PREFIX = "[invite-project-forge]"
+REVOKE_PREFIX = "[revoke-project-forge]"
+ACCEPT_COMMAND = "/accept-project-forge"
+DECLINE_COMMAND = "/decline-project-forge"
+DOCTOR_COMMAND = "/project-forge-doctor"
 
 VALID_ROLES = {"admin", "poc-author"}
 VALID_STATUSES = {"active", "revoked"}
 VALID_CAPABILITIES = {
-    "generate-poc",
+    "generate-project",
     "sync-core",
     "invite-developer",
     "revoke-developer",
@@ -102,7 +102,7 @@ def load_registry(path: Path) -> dict[str, Any]:
         if role == "poc-author" and ({"invite-developer", "revoke-developer"} & set(capabilities)):
             raise InvitationError(f"POC author cannot have admin capabilities: {owner}")
         if status == "active" and role == "admin":
-            required = {"generate-poc", "sync-core", "invite-developer", "revoke-developer"}
+            required = {"generate-project", "sync-core", "invite-developer", "revoke-developer"}
             if not required <= set(capabilities):
                 raise InvitationError(f"Active admin is missing required capabilities: {owner}")
             active_admins += 1
@@ -141,7 +141,7 @@ def projected_allowed_owners(data: dict[str, Any]) -> list[str]:
     return [
         record["githubOwner"]
         for record in data["developers"]
-        if record["status"] == "active" and "generate-poc" in record["capabilities"]
+        if record["status"] == "active" and "generate-project" in record["capabilities"]
     ]
 
 
@@ -150,7 +150,7 @@ def validate_projection(registry: dict[str, Any], allowed_path: Path) -> None:
     expected = [item.lower() for item in projected_allowed_owners(registry)]
     if actual != expected:
         raise InvitationError(
-            "config/allowed-owners.json must exactly mirror active generate-poc developers"
+            "config/allowed-owners.json must exactly mirror active generate-project developers"
         )
 
 
@@ -333,7 +333,7 @@ def extract_revoke(event: dict[str, Any], registry: dict[str, Any]) -> dict[str,
     if not existing or existing["status"] != "active":
         raise InvitationError(f"Developer is not active: {target}")
     if existing["role"] == "admin" and active_admin_count(registry) <= 1:
-        raise InvitationError("Refusing to revoke the last active Lean admin")
+        raise InvitationError("Refusing to revoke the last active Project Forge admin")
     return {
         "target_owner": target,
         "request_author": author,
@@ -387,7 +387,7 @@ def activate(
         "status": "active",
         "role": "poc-author",
         "contractChannel": "stable",
-        "capabilities": ["generate-poc", "sync-core"],
+        "capabilities": ["generate-project", "sync-core"],
         "invitedBy": invited_by,
         "activationIssue": issue,
     }
@@ -418,7 +418,7 @@ def revoke(
     if not record or record["status"] != "active":
         raise InvitationError(f"Developer is not active: {owner}")
     if record["role"] == "admin" and active_admin_count(registry) <= 1:
-        raise InvitationError("Refusing to revoke the last active Lean admin")
+        raise InvitationError("Refusing to revoke the last active Project Forge admin")
     record["status"] = "revoked"
     record["capabilities"] = []
     record["revokedBy"] = revoked_by
@@ -466,7 +466,7 @@ def command_validate(args: argparse.Namespace) -> int:
     registry = load_registry(args.registry)
     load_policy(args.policy)
     validate_projection(registry, args.allowed_owners)
-    print("Developer registry, invitation policy, and compatibility allowlist are valid")
+    print("Developer registry, invitation policy, and authorization projection are valid")
     return 0
 
 
@@ -478,7 +478,7 @@ def command_activate(args: argparse.Namespace) -> int:
         invited_by=args.invited_by,
         issue=args.issue_number,
     )
-    print(f"Activated Lean developer {value['githubOwner']}")
+    print(f"Activated Project Forge developer {value['githubOwner']}")
     return 0
 
 
@@ -490,7 +490,7 @@ def command_revoke(args: argparse.Namespace) -> int:
         revoked_by=args.revoked_by,
         issue=args.issue_number,
     )
-    print(f"Revoked Lean developer {value['githubOwner']}")
+    print(f"Revoked Project Forge developer {value['githubOwner']}")
     return 0
 
 
@@ -514,7 +514,7 @@ def add_extract(sub: argparse._SubParsersAction[argparse.ArgumentParser], name: 
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Lean developer invitation and registry tooling")
+    parser = argparse.ArgumentParser(description="Project Forge developer invitation and registry tooling")
     sub = parser.add_subparsers(dest="command", required=True)
 
     for name in (
