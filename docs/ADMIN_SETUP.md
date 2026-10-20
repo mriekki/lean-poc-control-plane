@@ -95,7 +95,7 @@ An ACTIVE admin creates one empty-body issue:
 
 The invited Builder follows the concise instructions in the invitation issue and [`SETUP.md`](SETUP.md): install/approve **Project Forge Builder** if needed, then comment exactly `/accept-project-forge` in the invitation issue.
 
-The claim workflow verifies identity, invitation lifetime, and Project Forge Builder App installation before updating the developer registry and compatibility allowlist.
+The claim workflow verifies identity, invitation lifetime, and Project Forge Builder App installation before updating the developer registry and authorization projection.
 
 The invited owner can decline with `/decline-project-forge`. Unclaimed invitations expire after the configured claim window.
 

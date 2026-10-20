@@ -197,7 +197,6 @@ class InvitationTests(unittest.TestCase):
             with self.subTest(path=path):
                 content = path.read_text(encoding="utf-8")
                 self.assertIn("mriekki/project-forge-platform", content)
-                self.assertNotIn("mriekki/project-forge-platform", content)
     def test_last_admin_cannot_be_revoked(self) -> None:
         event = issue_event("[revoke-project-forge] mriekki", author="mriekki")
         with self.assertRaises(invitation.InvitationError):

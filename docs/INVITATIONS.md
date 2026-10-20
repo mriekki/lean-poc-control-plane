@@ -8,7 +8,7 @@ Canonical Control Plane repository:
 mriekki/project-forge-control-plane
 ```
 
-The public GitHub App display name is **Project Forge Builder**. Technical compatibility identifiers such as `[invite-project-forge]`, `/accept-project-forge`, `poc-author`, `[generate-project]`, and `POC_BOOTSTRAP.json` remain stable.
+The public GitHub App display name is **Project Forge Builder**. Canonical technical identifiers include `[invite-project-forge]`, `/accept-project-forge`, `poc-author`, `[generate-project]`, and `POC_BOOTSTRAP.json`.
 
 The onboarding model separates three questions:
 
@@ -39,9 +39,9 @@ The self-test is zero-input: submit the prefilled empty-body issue. The workflow
 Current technical roles remain:
 
 - `admin` — normal Project Builder capabilities plus invitation/revocation administration;
-- `poc-author` — compatibility identifier for a normal Project Builder with generation and supported update/sync authorization.
+- `poc-author` — role identifier for a normal Project Builder with generation and supported update/sync authorization.
 
-`config/allowed-owners.json` remains a generated compatibility projection for existing validators and must mirror ACTIVE developers with `generate-project`. CI validates that invariant.
+`config/allowed-owners.json` remains a generated authorization projection for existing validators and must mirror ACTIVE developers with `generate-project`. CI validates that invariant.
 
 No credential, private Project definition, private repository content, or secret belongs in either file.
 
@@ -77,7 +77,7 @@ The claim workflow verifies:
 - the invitation is still inside the configured claim window;
 - the Project Forge Builder GitHub App installation can be minted/verified for that owner.
 
-Only then does it activate the developer registry and compatibility allowlist.
+Only then does it activate the developer registry and authorization projection.
 
 Knowing or forwarding an invitation URL does not grant authorization.
 
@@ -114,7 +114,6 @@ After readiness, the Builder configures a ChatGPT coding Project once using the 
 New Project: <idea>
 ```
 
-`New POC:` remains a compatibility alias.
 
 ## Admin onboarding test mode
 
@@ -142,7 +141,7 @@ The test is deliberately non-authorizing:
 
 - test claim repository contents permission is read-only;
 - no activation operation runs;
-- developer registry and compatibility allowlist are never written;
+- developer registry and authorization projection are never written;
 - no role/capability change occurs;
 - no Project repository is created/generated;
 - no deployment or tear-down path is available.

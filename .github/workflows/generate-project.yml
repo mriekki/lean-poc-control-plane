@@ -1,4 +1,4 @@
-name: Generate POC
+name: Generate Project
 
 on:
   issues:
@@ -9,7 +9,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: poc-generation-${{ github.event.issue.number }}
+  group: project-generation-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
@@ -222,16 +222,16 @@ jobs:
           if approved != expected:
               raise SystemExit(f'Generated manifest Project Forge provenance mismatch: expected {expected!r}, found {approved!r}')
 
-          project-forge = documents['PROJECT_FORGE_BASELINE.json']
+          project_forge = documents['PROJECT_FORGE_BASELINE.json']
           for key in ('package', 'version', 'profile'):
-              if project-forge.get(key) != expected[key]:
+              if project_forge.get(key) != expected[key]:
                   raise SystemExit(
-                      f'PROJECT_FORGE_BASELINE.json {key} mismatch: expected {expected[key]!r}, found {project-forge.get(key)!r}'
+                      f'PROJECT_FORGE_BASELINE.json {key} mismatch: expected {expected[key]!r}, found {project_forge.get(key)!r}'
                   )
-          components = project-forge.get('components') or {}
+          components = project_forge.get('components') or {}
           if set(components) != {'core', 'deployment'}:
               raise SystemExit(
-                  f'greenfield-poc Project Forge baseline must contain core and deployment components; found {sorted(components)}'
+                  f'Project Forge baseline must contain core and deployment components; found {sorted(components)}'
               )
           PY
           python tools/check_baseline_handoff.py generated --generated "$RUNNER_TEMP/generated"
@@ -297,4 +297,4 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
-            "Remote POC generation failed. No publication success is implied. Inspect this workflow run before retrying or modifying the target repository."
+            "Remote Project generation failed. No publication success is implied. Inspect this workflow run before retrying or modifying the target repository."

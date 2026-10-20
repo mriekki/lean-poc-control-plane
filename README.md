@@ -8,7 +8,7 @@ Canonical repository identity after the coordinated rename:
 mriekki/project-forge-control-plane
 ```
 
-Historical links to `mriekki/project-forge-control-plane` are compatibility history only. Technical commands and schema identifiers such as `[invite-project-forge]`, `/accept-project-forge`, `[generate-project]`, and `POC_BOOTSTRAP.json` remain stable.
+Canonical technical commands and schema identifiers include `[invite-project-forge]`, `/accept-project-forge`, `[generate-project]`, and `POC_BOOTSTRAP.json`.
 
 ## Admin quick start
 
@@ -19,7 +19,7 @@ From **Issues → New issue**, choose:
 
 The self-test is zero-input: submit the prefilled issue. The workflow infers the active admin from the issue opener, renders the prospective invitation message, and can report `TEST READY FOR PROJECT FORGE`. It never changes authorization, Projects, or deployments.
 
-For a real invitation, the compatibility issue title remains:
+For a real invitation, use:
 
 ```text
 [invite-project-forge] github-owner
@@ -50,9 +50,9 @@ Each Builder owns their own Project repositories. This public Control Plane cont
 
 ## Developer authorization
 
-`config/developers.json` is the operational authorization registry. `config/allowed-owners.json` remains a generated compatibility projection for existing generation/sync validators; CI requires it to mirror active developers with `generate-project` capability.
+`config/developers.json` is the operational authorization registry. `config/allowed-owners.json` remains a generated authorization projection for existing generation/sync validators; CI requires it to mirror active developers with `generate-project` capability.
 
-An already-active Builder can use the compatibility doctor issue:
+An already-active Builder can use the doctor issue:
 
 ```text
 [project-forge-doctor] github-owner
@@ -84,7 +84,7 @@ Remote Core-sync request:
 
 For both request types, the issue body must be empty. Private product definitions, baseline details, source code, and secrets stay in the target repository.
 
-The request author must match the target owner and be ACTIVE for the relevant capability. Foundational/platform repositories are never valid generation or generic Core-sync targets; both the legacy and renamed Control Plane repository identities are explicitly blocked.
+The request author must match the target owner and be ACTIVE for the relevant capability. Foundational/platform repositories are never valid generation or generic Core-sync targets.
 
 The approved `POC_BOOTSTRAP.json` stays private in a generation target. `CORE_BASELINE.json` stays private in a Core-sync target. Workflows read those files only after minting a short-lived GitHub App installation token scoped to the exact repository.
 
@@ -106,7 +106,7 @@ A missing package/version, integrity mismatch, invalid profile, managed-path con
 
 ## Remote Core sync
 
-The `[sync-core]` workflow remains the narrower compatibility path for generated consumers that still use Core-specific sync. It validates current baseline integrity, creates a new non-force branch when needed, opens a consumer PR, and reports success only after target PR checks are green. Merge remains a human decision in the consumer repository.
+The `[sync-core]` workflow remains the narrower Core-specific path for generated consumers that still use Core-specific sync. It validates current baseline integrity, creates a new non-force branch when needed, opens a consumer PR, and reports success only after target PR checks are green. Merge remains a human decision in the consumer repository.
 
 ## GitHub App and setup
 

@@ -23,18 +23,12 @@ class ProjectForgePublicIdentityTests(unittest.TestCase):
         canonical = "mriekki/project-forge-control-plane"
         combined = "\n".join(path.read_text(encoding="utf-8") for path in PUBLIC_FILES)
         self.assertIn(canonical, combined)
-        self.assertNotIn(
-            "https://github.com/mriekki/project-forge-control-plane",
-            combined,
-            "new public links must use the renamed repository",
-        )
 
-    def test_request_safety_blocks_legacy_and_canonical_repo_names(self) -> None:
+    def test_request_safety_blocks_control_plane_repository(self) -> None:
         request = (ROOT / "tools" / "request.py").read_text(encoding="utf-8")
         self.assertIn('"mriekki/project-forge-control-plane"', request)
-        self.assertIn('"mriekki/project-forge-control-plane"', request)
 
-    def test_compatibility_commands_remain_stable(self) -> None:
+    def test_canonical_commands_are_present(self) -> None:
         combined = "\n".join(path.read_text(encoding="utf-8") for path in PUBLIC_FILES)
         self.assertIn("[invite-project-forge]", combined)
         self.assertIn("/accept-project-forge", combined)

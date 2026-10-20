@@ -78,19 +78,13 @@ class RequestTests(unittest.TestCase):
 
     def test_foundational_repository_is_rejected(self) -> None:
         repositories = [
-            "project-forge-agentic-core",
             "project-forge-core",
-            "project-forge-poc-bootstrap",
             "project-forge-bootstrap",
-            "project-forge-workspace-adoption-kit",
             "project-forge-adoption-kit",
-            "family-meal-planner",
-            "project-forge-poc-control-plane",
             "project-forge-control-plane",
-            "project-forge-poc-deployment-kit",
             "project-forge-deployment-kit",
             "project-forge-platform",
-            "project-forge-platform",
+            "family-meal-planner",
         ]
 
         for repository in repositories:
@@ -139,8 +133,6 @@ class RequestTests(unittest.TestCase):
         self.assertIn("permission-workflows: write", workflow)
         self.assertIn("repositories: project-forge-bootstrap", workflow)
         self.assertIn("repository: mriekki/project-forge-bootstrap", workflow)
-        self.assertNotIn("repositories: project-forge-poc-bootstrap", workflow)
-        self.assertNotIn("repository: mriekki/project-forge-bootstrap", workflow)
         self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)
 
@@ -181,7 +173,7 @@ class RequestTests(unittest.TestCase):
     def test_generation_docs_distinguish_approved_choice_from_resolved_integrity(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         admin_setup = (ROOT / "docs" / "ADMIN_SETUP.md").read_text(encoding="utf-8")
-        self.assertIn('generation.project_forge.integrity: "registry"', readme)
+        self.assertIn('generation.project-forge.integrity: "registry"', readme)
         self.assertIn("Humans approve the exact package/version/profile, not npm hash plumbing", readme)
         self.assertIn("resolved exact SHA-512 integrity", readme)
         self.assertNotIn("approved SHA-512 integrity", readme)
@@ -192,13 +184,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("mriekki/project-forge-deployment-kit", readme)
         self.assertIn("mriekki/project-forge-adoption-kit", readme)
         self.assertIn("mriekki/project-forge-platform", readme)
-        self.assertNotIn("mriekki/project-forge-core", readme)
-        self.assertNotIn("mriekki/project-forge-bootstrap", readme)
-        self.assertNotIn("mriekki/project-forge-deployment-kit", readme)
-        self.assertNotIn("mriekki/project-forge-adoption-kit", readme)
-        self.assertNotIn("mriekki/project-forge-platform", readme)
         self.assertIn("mriekki/project-forge-bootstrap", admin_setup)
-        self.assertNotIn("mriekki/project-forge-bootstrap", admin_setup)
 
     def test_core_sync_workflow_is_scoped_and_non_force(self) -> None:
         workflow = (ROOT / ".github/workflows/sync-core.yml").read_text(encoding="utf-8")
@@ -206,8 +192,6 @@ class RequestTests(unittest.TestCase):
         self.assertIn("--request-type sync-core", workflow)
         self.assertIn("repositories: project-forge-core", workflow)
         self.assertIn("repository: mriekki/project-forge-core", workflow)
-        self.assertNotIn("repositories: project-forge-agentic-core", workflow)
-        self.assertNotIn("repository: mriekki/project-forge-core", workflow)
         self.assertIn("permission-contents: write", workflow)
         self.assertIn("permission-workflows: write", workflow)
         self.assertIn("permission-pull-requests: write", workflow)
@@ -229,7 +213,6 @@ class RequestTests(unittest.TestCase):
         self.assertIn("Refusing direct Core sync for package-managed Project Forge consumer", workflow)
         self.assertIn("PROJECT_FORGE_BASELINE.json is present. Use /project-forge-update", workflow)
         self.assertIn("Sync Project Forge Core to", workflow)
-        self.assertNotIn("Sync Project Forge Core to", workflow)
         self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
         self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)

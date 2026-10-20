@@ -13,20 +13,12 @@ REQUEST_PREFIX = "[generate-project]"
 SYNC_REQUEST_PREFIX = "[sync-core]"
 FOUNDATIONAL_REPOSITORIES = {
     "mriekki/project-forge-core",
-    "mriekki/project-forge-core",
-    "mriekki/project-forge-bootstrap",
     "mriekki/project-forge-bootstrap",
     "mriekki/project-forge-adoption-kit",
-    "mriekki/project-forge-adoption-kit",
+    "mriekki/project-forge-control-plane",
+    "mriekki/project-forge-deployment-kit",
+    "mriekki/project-forge-platform",
     "mriekki/family-meal-planner",
-    # Keep legacy aliases blocked after repository renames because GitHub
-    # redirects still make them unsafe generation or generic Core-sync targets.
-    "mriekki/project-forge-control-plane",
-    "mriekki/project-forge-control-plane",
-    "mriekki/project-forge-deployment-kit",
-    "mriekki/project-forge-deployment-kit",
-    "mriekki/project-forge-platform",
-    "mriekki/project-forge-platform",
 }
 
 

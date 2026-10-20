@@ -466,7 +466,7 @@ def command_validate(args: argparse.Namespace) -> int:
     registry = load_registry(args.registry)
     load_policy(args.policy)
     validate_projection(registry, args.allowed_owners)
-    print("Developer registry, invitation policy, and compatibility allowlist are valid")
+    print("Developer registry, invitation policy, and authorization projection are valid")
     return 0
 
 

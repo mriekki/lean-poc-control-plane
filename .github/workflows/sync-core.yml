@@ -74,7 +74,7 @@ jobs:
           import json
           from pathlib import Path
           data = json.loads(Path('core/COMPATIBILITY.json').read_text(encoding='utf-8'))
-          print(f"version={data['leanCoreVersion']}")
+          print(f"version={data['projectForgeCoreVersion']}")
           PY
 
       - name: Checkout private target consumer
@@ -213,7 +213,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git -C target config user.name "project-forge-poc-control-plane[bot]"
+          git -C target config user.name "project-forge-control-plane[bot]"
           git -C target config user.email "noreply@github.com"
           git -C target add -A
           git -C target diff --cached --check

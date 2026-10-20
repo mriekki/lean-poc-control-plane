@@ -55,13 +55,12 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
         self.assertIn("READY FOR PROJECT FORGE", text)
         self.assertIn("New Project: <idea>", text)
 
-    def test_invitation_docs_preserve_technical_compatibility_identifiers(self):
+    def test_invitation_docs_use_canonical_identifiers(self):
         text = (ROOT / "docs" / "INVITATIONS.md").read_text(encoding="utf-8")
         self.assertIn("Project Forge Developer Invitations", text)
         self.assertIn("poc-author", text)
         self.assertIn("[invite-project-forge]", text)
-        self.assertIn("New POC:", text)
-        self.assertIn("compatibility alias", text)
+        self.assertNotIn("New POC:", text)
 
     def test_test_mode_has_clear_preview_and_non_authorizing_result(self):
         invite = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
