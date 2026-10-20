@@ -18,7 +18,7 @@ class RequestTests(unittest.TestCase):
         self,
         *,
         author: str = "mriekki",
-        title: str = "[generate-poc] mriekki/example-poc",
+        title: str = "[generate-project] mriekki/example-poc",
         body: str = "",
     ) -> dict:
         return {
@@ -68,7 +68,7 @@ class RequestTests(unittest.TestCase):
             )
 
     def test_owner_must_be_allowlisted(self) -> None:
-        event = self.event(author="kyle", title="[generate-poc] kyle/example-poc")
+        event = self.event(author="kyle", title="[generate-project] kyle/example-poc")
         with self.assertRaises(request.RequestError):
             request.parse_request(event, {"mriekki"})
 
@@ -78,24 +78,24 @@ class RequestTests(unittest.TestCase):
 
     def test_foundational_repository_is_rejected(self) -> None:
         repositories = [
-            "lean-agentic-core",
+            "project-forge-agentic-core",
             "project-forge-core",
-            "lean-poc-bootstrap",
+            "project-forge-poc-bootstrap",
             "project-forge-bootstrap",
-            "lean-workspace-adoption-kit",
+            "project-forge-workspace-adoption-kit",
             "project-forge-adoption-kit",
             "family-meal-planner",
-            "lean-poc-control-plane",
+            "project-forge-poc-control-plane",
             "project-forge-control-plane",
-            "lean-poc-deployment-kit",
+            "project-forge-poc-deployment-kit",
             "project-forge-deployment-kit",
-            "lean-platform",
+            "project-forge-platform",
             "project-forge-platform",
         ]
 
         for repository in repositories:
             for prefix, parser in (
-                ("[generate-poc]", request.parse_request),
+                ("[generate-project]", request.parse_request),
                 ("[sync-core]", request.parse_sync_request),
             ):
                 title = f"{prefix} mriekki/{repository}"
@@ -105,9 +105,9 @@ class RequestTests(unittest.TestCase):
 
     def test_title_must_be_exact_owner_repo_shape(self) -> None:
         for title in (
-            "generate-poc mriekki/example-poc",
-            "[generate-poc] example-poc",
-            "[generate-poc] mriekki/example-poc extra",
+            "generate-project mriekki/example-poc",
+            "[generate-project] example-poc",
+            "[generate-project] mriekki/example-poc extra",
         ):
             with self.subTest(title=title):
                 with self.assertRaises(request.RequestError):
@@ -129,7 +129,7 @@ class RequestTests(unittest.TestCase):
             self.assertEqual(request.load_allowed_owners(path), {"mriekki", "kyle-example"})
 
     def test_generation_workflow_uses_github_app_target_isolation_and_private_seed_manifest(self) -> None:
-        workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
         self.assertIn("actions/create-github-app-token@v3", workflow)
         self.assertIn("APP_PRIVATE_KEY", workflow)
         self.assertIn("APP_CLIENT_ID", workflow)
@@ -139,49 +139,49 @@ class RequestTests(unittest.TestCase):
         self.assertIn("permission-workflows: write", workflow)
         self.assertIn("repositories: project-forge-bootstrap", workflow)
         self.assertIn("repository: mriekki/project-forge-bootstrap", workflow)
-        self.assertNotIn("repositories: lean-poc-bootstrap", workflow)
-        self.assertNotIn("repository: mriekki/lean-poc-bootstrap", workflow)
-        self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn("repositories: project-forge-poc-bootstrap", workflow)
+        self.assertNotIn("repository: mriekki/project-forge-bootstrap", workflow)
+        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)
 
     def test_generation_workflow_uses_actual_app_bot_identity_for_commits(self) -> None:
-        workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
         self.assertIn("steps.target-token.outputs.app-slug", workflow)
         self.assertIn('bot_login="${APP_SLUG}[bot]"', workflow)
         self.assertIn('gh api "/users/${bot_login}" --jq', workflow)
         self.assertIn("@users.noreply.github.com", workflow)
         self.assertIn('git -C "$target" config user.name "$BOT_LOGIN"', workflow)
         self.assertIn('git -C "$target" config user.email "$BOT_EMAIL"', workflow)
-        self.assertNotIn('config user.name "lean-poc-control-plane[bot]"', workflow)
+        self.assertNotIn('config user.name "project-forge-poc-control-plane[bot]"', workflow)
 
-    def test_generation_workflow_uses_exact_public_lean_artifact(self) -> None:
-        workflow = (ROOT / ".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+    def test_generation_workflow_uses_exact_public_project_forge_artifact(self) -> None:
+        workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
         self.assertIn("actions/setup-node@v6", workflow)
-        self.assertIn("steps.manifest.outputs.lean_package", workflow)
-        self.assertIn("steps.manifest.outputs.lean_version", workflow)
-        self.assertIn("steps.manifest.outputs.lean_profile", workflow)
-        self.assertIn("steps.manifest.outputs.lean_integrity", workflow)
-        self.assertIn('npm pack "${LEAN_PACKAGE}@${LEAN_VERSION}"', workflow)
+        self.assertIn("steps.manifest.outputs.project_forge_package", workflow)
+        self.assertIn("steps.manifest.outputs.project_forge_version", workflow)
+        self.assertIn("steps.manifest.outputs.project_forge_profile", workflow)
+        self.assertIn("steps.manifest.outputs.project_forge_integrity", workflow)
+        self.assertIn('npm pack "${PROJECT_FORGE_PACKAGE}@${PROJECT_FORGE_VERSION}"', workflow)
         self.assertIn("--ignore-scripts", workflow)
-        self.assertIn("lean_package_generation.verify_integrity", workflow)
-        self.assertIn("--lean-tarball", workflow)
-        self.assertIn("LEAN_BASELINE.json", workflow)
+        self.assertIn("project_forge_package_generation.verify_integrity", workflow)
+        self.assertIn("--project-forge-tarball", workflow)
+        self.assertIn("PROJECT_FORGE_BASELINE.json", workflow)
         self.assertIn("check-managed-baselines.py", workflow)
         self.assertIn("CORE_BASELINE.json", workflow)
         self.assertIn("DEPLOYMENT_BASELINE.json", workflow)
-        self.assertNotIn("Checkout pinned Lean Core source", workflow)
+        self.assertNotIn("Checkout pinned Project Forge Core source", workflow)
         self.assertNotIn("Checkout pinned Deployment Kit source", workflow)
         self.assertNotIn("--core-path", workflow)
         self.assertNotIn("--deployment-kit-path", workflow)
-        self.assertNotIn("lean-agentic-core", workflow)
-        self.assertNotIn("lean-poc-deployment-kit", workflow)
-        self.assertNotIn("LEAN_CORE_READ_TOKEN", workflow)
-        self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn("project-forge-agentic-core", workflow)
+        self.assertNotIn("project-forge-poc-deployment-kit", workflow)
+        self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
+        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
 
     def test_generation_docs_distinguish_approved_choice_from_resolved_integrity(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         admin_setup = (ROOT / "docs" / "ADMIN_SETUP.md").read_text(encoding="utf-8")
-        self.assertIn('generation.lean.integrity: "registry"', readme)
+        self.assertIn('generation.project_forge.integrity: "registry"', readme)
         self.assertIn("Humans approve the exact package/version/profile, not npm hash plumbing", readme)
         self.assertIn("resolved exact SHA-512 integrity", readme)
         self.assertNotIn("approved SHA-512 integrity", readme)
@@ -192,13 +192,13 @@ class RequestTests(unittest.TestCase):
         self.assertIn("mriekki/project-forge-deployment-kit", readme)
         self.assertIn("mriekki/project-forge-adoption-kit", readme)
         self.assertIn("mriekki/project-forge-platform", readme)
-        self.assertNotIn("mriekki/lean-agentic-core", readme)
-        self.assertNotIn("mriekki/lean-poc-bootstrap", readme)
-        self.assertNotIn("mriekki/lean-poc-deployment-kit", readme)
-        self.assertNotIn("mriekki/lean-workspace-adoption-kit", readme)
-        self.assertNotIn("mriekki/lean-platform", readme)
+        self.assertNotIn("mriekki/project-forge-core", readme)
+        self.assertNotIn("mriekki/project-forge-bootstrap", readme)
+        self.assertNotIn("mriekki/project-forge-deployment-kit", readme)
+        self.assertNotIn("mriekki/project-forge-adoption-kit", readme)
+        self.assertNotIn("mriekki/project-forge-platform", readme)
         self.assertIn("mriekki/project-forge-bootstrap", admin_setup)
-        self.assertNotIn("mriekki/lean-poc-bootstrap", admin_setup)
+        self.assertNotIn("mriekki/project-forge-bootstrap", admin_setup)
 
     def test_core_sync_workflow_is_scoped_and_non_force(self) -> None:
         workflow = (ROOT / ".github/workflows/sync-core.yml").read_text(encoding="utf-8")
@@ -206,8 +206,8 @@ class RequestTests(unittest.TestCase):
         self.assertIn("--request-type sync-core", workflow)
         self.assertIn("repositories: project-forge-core", workflow)
         self.assertIn("repository: mriekki/project-forge-core", workflow)
-        self.assertNotIn("repositories: lean-agentic-core", workflow)
-        self.assertNotIn("repository: mriekki/lean-agentic-core", workflow)
+        self.assertNotIn("repositories: project-forge-agentic-core", workflow)
+        self.assertNotIn("repository: mriekki/project-forge-core", workflow)
         self.assertIn("permission-contents: write", workflow)
         self.assertIn("permission-workflows: write", workflow)
         self.assertIn("permission-pull-requests: write", workflow)
@@ -226,12 +226,12 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("headRefOid", workflow)
         self.assertIn("CORE_BASELINE.json", workflow)
         self.assertIn("greenfield-workspace", workflow)
-        self.assertIn("Refusing direct Core sync for package-managed Lean consumer", workflow)
-        self.assertIn("LEAN_BASELINE.json is present. Use /lean-update", workflow)
+        self.assertIn("Refusing direct Core sync for package-managed Project Forge consumer", workflow)
+        self.assertIn("PROJECT_FORGE_BASELINE.json is present. Use /project-forge-update", workflow)
         self.assertIn("Sync Project Forge Core to", workflow)
-        self.assertNotIn("Sync Lean Core to", workflow)
-        self.assertNotIn("LEAN_CORE_READ_TOKEN", workflow)
-        self.assertNotIn("LEAN_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn("Sync Project Forge Core to", workflow)
+        self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
+        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
         self.assertNotIn("--force", workflow)
 
 

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   invite:
-    if: startsWith(github.event.issue.title, '[invite-lean] ')
+    if: startsWith(github.event.issue.title, '[invite-project-forge] ')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,11 +75,11 @@ jobs:
               ``,
               `While signed in as **@${target}**, add a new comment to this issue containing exactly:`,
               ``,
-              '`/accept-lean`',
+              '`/accept-project-forge`',
               ``,
               `Project Forge will verify the rest automatically. You do not need to configure the Control Plane, GitHub Actions, Bootstrap, or App credentials.`,
               ``,
-              `Invitation window: **${expiry} days**. To decline instead, comment \`/decline-lean\`.`,
+              `Invitation window: **${expiry} days**. To decline instead, comment \`/decline-project-forge\`.`,
               ``,
               `More about Project Forge: ${welcomeUrl}`,
             ].join('\n');
@@ -157,7 +157,7 @@ jobs:
               'Activate your access:',
               `1. Open your invitation issue: ${issueUrl}`,
               `2. Install/approve Project Forge Builder if needed: ${appUrl}`,
-              '3. In the invitation issue, add a new comment containing exactly: /accept-lean',
+              '3. In the invitation issue, add a new comment containing exactly: /accept-project-forge',
               '',
               `More about Project Forge: ${welcomeUrl}`,
               '```',
@@ -170,7 +170,7 @@ jobs:
               '',
               `2. While signed in as **@${target}**, add a new comment to this issue containing exactly:`,
               '',
-              '`/accept-lean`',
+              '`/accept-project-forge`',
               '',
               'The test verifies GitHub identity, App availability, and the public Project Forge contract. It does not change authorization, create a Project, deploy, or tear down anything.',
               '',

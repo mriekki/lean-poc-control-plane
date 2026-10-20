@@ -7,7 +7,7 @@
       "role": "admin",
       "contractChannel": "stable",
       "capabilities": [
-        "generate-poc",
+        "generate-project",
         "sync-core",
         "invite-developer",
         "revoke-developer"
@@ -19,7 +19,7 @@
       "role": "poc-author",
       "contractChannel": "stable",
       "capabilities": [
-        "generate-poc",
+        "generate-project",
         "sync-core"
       ]
     }

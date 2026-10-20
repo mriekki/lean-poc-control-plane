@@ -1,4 +1,4 @@
-name: Decline Lean Invitation
+name: Decline Project Forge Invitation
 
 on:
   issue_comment:
@@ -11,8 +11,8 @@ permissions:
 jobs:
   decline:
     if: >-
-      startsWith(github.event.issue.title, '[invite-lean] ') &&
-      github.event.comment.body == '/decline-lean'
+      startsWith(github.event.issue.title, '[invite-project-forge] ') &&
+      github.event.comment.body == '/decline-project-forge'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `LEAN INVITATION — DECLINED\n\n@${target} declined this invitation. No developer authorization was changed.`,
+              body: `PROJECT_FORGE INVITATION — DECLINED\n\n@${target} declined this invitation. No developer authorization was changed.`,
             });
             await github.rest.issues.update({
               owner: context.repo.owner,

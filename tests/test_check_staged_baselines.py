@@ -29,26 +29,26 @@ def initialize_repo(root: Path, attributes: str) -> None:
 def component_metadata() -> dict[str, dict[str, str]]:
     return {
         "core": {
-            "repository": "mriekki/lean-agentic-core",
+            "repository": "mriekki/project-forge-core",
             "commit": "a" * 40,
             "version": "1.10.0",
             "distribution": "greenfield-workspace",
         },
         "deployment": {
-            "repository": "mriekki/lean-poc-deployment-kit",
+            "repository": "mriekki/project-forge-deployment-kit",
             "commit": "b" * 40,
             "distribution": "greenfield-poc",
         },
     }
 
 
-def write_manifest_and_lean_baseline(root: Path, components: dict[str, dict[str, str]]) -> None:
+def write_manifest_and_project_forge_baseline(root: Path, components: dict[str, dict[str, str]]) -> None:
     write_json(
         root / "POC_BOOTSTRAP.json",
         {
             "generation": {
-                "lean": {
-                    "package": "@mriekki/lean",
+                "project_forge": {
+                    "package": "@mriekki/project-forge",
                     "version": "0.1.0",
                     "profile": "greenfield-poc",
                     "integrity": "sha512-test",
@@ -57,10 +57,10 @@ def write_manifest_and_lean_baseline(root: Path, components: dict[str, dict[str,
         },
     )
     write_json(
-        root / "LEAN_BASELINE.json",
+        root / "PROJECT_FORGE_BASELINE.json",
         {
             "schemaVersion": 1,
-            "package": "@mriekki/lean",
+            "package": "@mriekki/project-forge",
             "version": "0.1.0",
             "profile": "greenfield-poc",
             "components": components,
@@ -74,7 +74,7 @@ def write_core_baseline(root: Path, path: str, content: bytes) -> str:
         root / "CORE_BASELINE.json",
         {
             "schemaVersion": 1,
-            "coreRepository": "mriekki/lean-agentic-core",
+            "coreRepository": "mriekki/project-forge-core",
             "coreCommit": "a" * 40,
             "coreVersion": "1.10.0",
             "distribution": "greenfield-workspace",
@@ -96,7 +96,7 @@ def write_deployment_baseline(root: Path, path: str, content: bytes) -> str:
         root / "DEPLOYMENT_BASELINE.json",
         {
             "schemaVersion": 1,
-            "deploymentKitRepository": "mriekki/lean-poc-deployment-kit",
+            "deploymentKitRepository": "mriekki/project-forge-deployment-kit",
             "deploymentKitCommit": "b" * 40,
             "distribution": "greenfield-poc",
             "managedPaths": [
@@ -115,7 +115,7 @@ def make_single_component_repo(root: Path, attributes: str) -> tuple[bytes, str]
     initialize_repo(root, attributes)
     managed = b"line one\r\nline two\r\n"
     (root / "managed.txt").write_bytes(managed)
-    write_manifest_and_lean_baseline(root, {"core": component_metadata()["core"]})
+    write_manifest_and_project_forge_baseline(root, {"core": component_metadata()["core"]})
     expected_hash = write_core_baseline(root, "managed.txt", managed)
     git(root, "add", "-A")
     return managed, expected_hash
@@ -158,7 +158,7 @@ class StagedBaselineTests(unittest.TestCase):
             deployment = b"deployment\r\n"
             (root / "core.txt").write_bytes(core)
             (root / "deployment.txt").write_bytes(deployment)
-            write_manifest_and_lean_baseline(root, component_metadata())
+            write_manifest_and_project_forge_baseline(root, component_metadata())
             write_core_baseline(root, "core.txt", core)
             write_deployment_baseline(root, "deployment.txt", deployment)
             git(root, "add", "-A")
@@ -171,7 +171,7 @@ class StagedBaselineTests(unittest.TestCase):
             initialize_repo(root, "shared.txt -text\n")
             shared = b"shared\r\n"
             (root / "shared.txt").write_bytes(shared)
-            write_manifest_and_lean_baseline(root, component_metadata())
+            write_manifest_and_project_forge_baseline(root, component_metadata())
             write_core_baseline(root, "shared.txt", shared)
             write_deployment_baseline(root, "shared.txt", shared)
             git(root, "add", "-A")
@@ -186,7 +186,7 @@ class StagedBaselineTests(unittest.TestCase):
 
 class GenerateWorkflowContractTests(unittest.TestCase):
     def test_generation_checks_staged_managed_baselines_before_commit(self):
-        workflow = Path(".github/workflows/generate-poc.yml").read_text(encoding="utf-8")
+        workflow = Path(".github/workflows/generate-project.yml").read_text(encoding="utf-8")
         staged_check = 'python tools/check_staged_baselines.py --root "$target"'
         commit = 'git -C "$target" commit -m "Generate ${PROJECT_SLUG} workspace baseline"'
 

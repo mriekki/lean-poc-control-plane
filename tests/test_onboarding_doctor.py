@@ -23,7 +23,7 @@ def registry_value() -> dict:
                 "role": "admin",
                 "contractChannel": "stable",
                 "capabilities": [
-                    "generate-poc",
+                    "generate-project",
                     "sync-core",
                     "invite-developer",
                     "revoke-developer",
@@ -34,7 +34,7 @@ def registry_value() -> dict:
                 "status": "active",
                 "role": "poc-author",
                 "contractChannel": "stable",
-                "capabilities": ["generate-poc", "sync-core"],
+                "capabilities": ["generate-project", "sync-core"],
             },
         ],
     }
@@ -64,7 +64,7 @@ class OnboardingDoctorTests(unittest.TestCase):
 
     def test_active_developer_can_open_standalone_doctor_issue(self) -> None:
         values = onboarding_doctor.extract_request(
-            issue_event("[lean-doctor] kyleriekki-89", author="kyleriekki-89"),
+            issue_event("[project-forge-doctor] kyleriekki-89", author="kyleriekki-89"),
             self.registry,
         )
         self.assertEqual(values["target_owner"], "kyleriekki-89")
@@ -73,7 +73,7 @@ class OnboardingDoctorTests(unittest.TestCase):
 
     def test_admin_can_open_standalone_doctor_issue_for_active_developer(self) -> None:
         values = onboarding_doctor.extract_request(
-            issue_event("[lean-doctor] kyleriekki-89", author="mriekki"),
+            issue_event("[project-forge-doctor] kyleriekki-89", author="mriekki"),
             self.registry,
         )
         self.assertEqual(values["target_owner"], "kyleriekki-89")
@@ -82,18 +82,18 @@ class OnboardingDoctorTests(unittest.TestCase):
     def test_standalone_doctor_rejects_unknown_target_or_nonempty_body(self) -> None:
         with self.assertRaises(onboarding_doctor.DoctorError):
             onboarding_doctor.extract_request(
-                issue_event("[lean-doctor] unknown-user", author="mriekki"),
+                issue_event("[project-forge-doctor] unknown-user", author="mriekki"),
                 self.registry,
             )
         with self.assertRaises(onboarding_doctor.DoctorError):
             onboarding_doctor.extract_request(
-                issue_event("[lean-doctor] kyleriekki-89", author="kyleriekki-89", body="details"),
+                issue_event("[project-forge-doctor] kyleriekki-89", author="kyleriekki-89", body="details"),
                 self.registry,
             )
 
     def test_standalone_doctor_can_be_retried_with_exact_comment(self) -> None:
-        event = issue_event("[lean-doctor] kyleriekki-89", author="kyleriekki-89")
-        event["comment"] = {"body": "/lean-doctor", "user": {"login": "kyleriekki-89"}}
+        event = issue_event("[project-forge-doctor] kyleriekki-89", author="kyleriekki-89")
+        event["comment"] = {"body": "/project-forge-doctor", "user": {"login": "kyleriekki-89"}}
         values = onboarding_doctor.extract_request(event, self.registry)
         self.assertEqual(values["target_owner"], "kyleriekki-89")
 
@@ -102,20 +102,20 @@ class OnboardingDoctorTests(unittest.TestCase):
             onboarding_doctor.extract_request(event, self.registry)
 
     def test_invitation_issue_doctor_path_remains_supported(self) -> None:
-        event = issue_event("[invite-lean] kyleriekki-89", author="mriekki")
-        event["comment"] = {"body": "/lean-doctor", "user": {"login": "kyleriekki-89"}}
+        event = issue_event("[invite-project-forge] kyleriekki-89", author="mriekki")
+        event["comment"] = {"body": "/project-forge-doctor", "user": {"login": "kyleriekki-89"}}
         values = onboarding_doctor.extract_request(event, self.registry)
         self.assertEqual(values["target_owner"], "kyleriekki-89")
 
     def test_workflow_supports_standalone_open_and_comment_retry(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "onboarding-doctor.yml").read_text(encoding="utf-8")
         self.assertIn("issues:\n    types: [opened]", workflow)
-        self.assertIn("[lean-doctor] ", workflow)
-        self.assertIn("[invite-lean] ", workflow)
+        self.assertIn("[project-forge-doctor] ", workflow)
+        self.assertIn("[invite-project-forge] ", workflow)
         self.assertIn("python tools/onboarding_doctor.py extract", workflow)
         self.assertIn("issue_number: Number(process.env.ISSUE_NUMBER)", workflow)
         self.assertIn("mriekki/project-forge-platform", workflow)
-        self.assertNotIn("mriekki/lean-platform", workflow)
+        self.assertNotIn("mriekki/project-forge-platform", workflow)
 
 
 if __name__ == "__main__":

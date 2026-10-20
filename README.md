@@ -8,7 +8,7 @@ Canonical repository identity after the coordinated rename:
 mriekki/project-forge-control-plane
 ```
 
-Historical links to `mriekki/lean-poc-control-plane` are compatibility history only. Technical commands and schema identifiers such as `[invite-lean]`, `/accept-lean`, `[generate-poc]`, and `POC_BOOTSTRAP.json` remain stable.
+Historical links to `mriekki/project-forge-control-plane` are compatibility history only. Technical commands and schema identifiers such as `[invite-project-forge]`, `/accept-project-forge`, `[generate-project]`, and `POC_BOOTSTRAP.json` remain stable.
 
 ## Admin quick start
 
@@ -22,16 +22,16 @@ The self-test is zero-input: submit the prefilled issue. The workflow infers the
 For a real invitation, the compatibility issue title remains:
 
 ```text
-[invite-lean] github-owner
+[invite-project-forge] github-owner
 ```
 
 The invitation issue is the onboarding portal. The invited GitHub identity:
 
 1. opens the invitation;
 2. installs/approves the **Project Forge Builder** GitHub App if needed; and
-3. replies in that same issue with exactly `/accept-lean`.
+3. replies in that same issue with exactly `/accept-project-forge`.
 
-The workflow verifies the exact identity and GitHub App installation before activation. The invited owner may use `/decline-lean`; unclaimed invitations expire under `config/invitation-policy.json`.
+The workflow verifies the exact identity and GitHub App installation before activation. The invited owner may use `/decline-project-forge`; unclaimed invitations expire under `config/invitation-policy.json`.
 
 Builder-facing setup is intentionally concise in `docs/SETUP.md`. Administrator/operator configuration is separate in `docs/ADMIN_SETUP.md`. See `docs/INVITATIONS.md` for the complete real/test invitation lifecycle.
 
@@ -43,19 +43,19 @@ Canonical reusable engineering sources remain separately owned:
 - `mriekki/project-forge-bootstrap` — Project Discovery, manifest/catalog contracts, and deterministic greenfield generation;
 - `mriekki/project-forge-deployment-kit` — reusable deployment mechanics;
 - `mriekki/project-forge-adoption-kit` — existing-repository adoption behavior;
-- `mriekki/project-forge-platform` / public `@mriekki/lean` — exact accepted reusable-component assembly, consumer delivery, and public ChatGPT bootstrap contract;
+- `mriekki/project-forge-platform` / public `@mriekki/project-forge` — exact accepted reusable-component assembly, consumer delivery, and public ChatGPT bootstrap contract;
 - `mriekki/project-forge-control-plane` — secure cross-account authorization and GitHub orchestration.
 
 Each Builder owns their own Project repositories. This public Control Plane contains only safe request/orchestration and developer-authorization metadata; it must not contain private Project definitions, GitHub App private keys, PATs, or other credentials.
 
 ## Developer authorization
 
-`config/developers.json` is the operational authorization registry. `config/allowed-owners.json` remains a generated compatibility projection for existing generation/sync validators; CI requires it to mirror active developers with `generate-poc` capability.
+`config/developers.json` is the operational authorization registry. `config/allowed-owners.json` remains a generated compatibility projection for existing generation/sync validators; CI requires it to mirror active developers with `generate-project` capability.
 
 An already-active Builder can use the compatibility doctor issue:
 
 ```text
-[lean-doctor] github-owner
+[project-forge-doctor] github-owner
 ```
 
 The doctor verifies registry state, Project Forge Builder GitHub App installation, and the public Project Forge ChatGPT contract. It is onboarding/readiness evidence, not a per-Project discovery requirement.
@@ -63,7 +63,7 @@ The doctor verifies registry state, Project Forge Builder GitHub App installatio
 Revocation uses:
 
 ```text
-[revoke-lean] github-owner
+[revoke-project-forge] github-owner
 ```
 
 Revocation removes future Control Plane authorization only. It never deletes, transfers, disables, or mutates repositories already owned by the Builder. The tooling refuses to revoke the last active admin.
@@ -73,7 +73,7 @@ Revocation removes future Control Plane authorization only. It never deletes, tr
 Generation request:
 
 ```text
-[generate-poc] owner/repository
+[generate-project] owner/repository
 ```
 
 Remote Core-sync request:
@@ -90,17 +90,17 @@ The approved `POC_BOOTSTRAP.json` stays private in a generation target. `CORE_BA
 
 ## GitHub-first generation
 
-The `[generate-poc]` workflow:
+The `[generate-project]` workflow:
 
 1. validates the authorized, owner-authored, empty-body request;
 2. reads and validates the private target `POC_BOOTSTRAP.json`;
 3. obtains a Bootstrap-only source token and an exact-target token;
-4. resolves/verifies the exact public `@mriekki/lean` package selected by the approved manifest;
+4. resolves/verifies the exact public `@mriekki/project-forge` package selected by the approved manifest;
 5. runs Bootstrap's canonical deterministic generation path;
 6. validates generated baselines and managed-file integrity; and
 7. publishes only the validated generated tree without force-pushing.
 
-Normal approved discovery may use `generation.lean.integrity: "registry"`. Humans approve the exact package/version/profile, not npm hash plumbing. Bootstrap resolves registry metadata to the **resolved exact SHA-512 integrity** at the generation boundary, verifies it before reusable mutation, and records that exact value in generated provenance.
+Normal approved discovery may use `generation.project-forge.integrity: "registry"`. Humans approve the exact package/version/profile, not npm hash plumbing. Bootstrap resolves registry metadata to the **resolved exact SHA-512 integrity** at the generation boundary, verifies it before reusable mutation, and records that exact value in generated provenance.
 
 A missing package/version, integrity mismatch, invalid profile, managed-path conflict, unavailable required access, or failed generation is a stop condition. The workflow never silently substitutes another package, source commit, or destination.
 

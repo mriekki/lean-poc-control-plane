@@ -9,23 +9,23 @@ import sys
 from pathlib import Path
 from typing import Any
 
-REQUEST_PREFIX = "[generate-poc]"
+REQUEST_PREFIX = "[generate-project]"
 SYNC_REQUEST_PREFIX = "[sync-core]"
 FOUNDATIONAL_REPOSITORIES = {
-    "mriekki/lean-agentic-core",
     "mriekki/project-forge-core",
-    "mriekki/lean-poc-bootstrap",
+    "mriekki/project-forge-core",
     "mriekki/project-forge-bootstrap",
-    "mriekki/lean-workspace-adoption-kit",
+    "mriekki/project-forge-bootstrap",
+    "mriekki/project-forge-adoption-kit",
     "mriekki/project-forge-adoption-kit",
     "mriekki/family-meal-planner",
     # Keep legacy aliases blocked after repository renames because GitHub
     # redirects still make them unsafe generation or generic Core-sync targets.
-    "mriekki/lean-poc-control-plane",
     "mriekki/project-forge-control-plane",
-    "mriekki/lean-poc-deployment-kit",
+    "mriekki/project-forge-control-plane",
     "mriekki/project-forge-deployment-kit",
-    "mriekki/lean-platform",
+    "mriekki/project-forge-deployment-kit",
+    "mriekki/project-forge-platform",
     "mriekki/project-forge-platform",
 }
 
@@ -141,7 +141,7 @@ def write_github_output(values: dict[str, str]) -> None:
 def extract_command(args: argparse.Namespace) -> int:
     allowed = load_allowed_owners(args.allowed_owners)
     event = read_json(args.event)
-    if args.request_type == "generate-poc":
+    if args.request_type == "generate-project":
         values = parse_request(event, allowed)
         label = "generation"
     else:
@@ -161,8 +161,8 @@ def parse_args() -> argparse.Namespace:
     extract.add_argument("--allowed-owners", required=True, type=Path)
     extract.add_argument(
         "--request-type",
-        choices=("generate-poc", "sync-core"),
-        default="generate-poc",
+        choices=("generate-project", "sync-core"),
+        default="generate-project",
         help="Public request contract to validate",
     )
     extract.set_defaults(func=extract_command)

@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   generate:
-    if: startsWith(github.event.issue.title, '[generate-poc] ')
+    if: startsWith(github.event.issue.title, '[generate-project] ')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout public control plane
@@ -120,19 +120,19 @@ jobs:
             --expected-target-owner "${{ steps.request.outputs.target_owner }}" \
             --allowed-target-owner "${{ steps.request.outputs.target_owner }}"
 
-      - name: Acquire exact Lean package artifact
-        id: lean-package
+      - name: Acquire exact Project Forge package artifact
+        id: project-forge-package
         shell: bash
         env:
-          LEAN_PACKAGE: ${{ steps.manifest.outputs.lean_package }}
-          LEAN_VERSION: ${{ steps.manifest.outputs.lean_version }}
+          PROJECT_FORGE_PACKAGE: ${{ steps.manifest.outputs.project_forge_package }}
+          PROJECT_FORGE_VERSION: ${{ steps.manifest.outputs.project_forge_version }}
         run: |
           set -euo pipefail
-          package_dir="$RUNNER_TEMP/lean-package"
-          pack_json="$RUNNER_TEMP/lean-pack.json"
+          package_dir="$RUNNER_TEMP/project-forge-package"
+          pack_json="$RUNNER_TEMP/project-forge-pack.json"
           mkdir -p "$package_dir"
 
-          npm pack "${LEAN_PACKAGE}@${LEAN_VERSION}" \
+          npm pack "${PROJECT_FORGE_PACKAGE}@${PROJECT_FORGE_VERSION}" \
             --json \
             --ignore-scripts \
             --pack-destination "$package_dir" > "$pack_json"
@@ -145,16 +145,16 @@ jobs:
           ' "$pack_json")"
           tarball="$package_dir/$filename"
           if [ ! -f "$tarball" ]; then
-            echo "npm pack did not produce expected Lean tarball: $tarball" >&2
+            echo "npm pack did not produce expected Project Forge tarball: $tarball" >&2
             exit 2
           fi
           echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
 
-      - name: Verify approved Lean package integrity
+      - name: Verify approved Project Forge package integrity
         shell: bash
         env:
-          LEAN_TARBALL: ${{ steps.lean-package.outputs.tarball }}
-          LEAN_INTEGRITY: ${{ steps.manifest.outputs.lean_integrity }}
+          PROJECT_FORGE_TARBALL: ${{ steps.project-forge-package.outputs.tarball }}
+          PROJECT_FORGE_INTEGRITY: ${{ steps.manifest.outputs.project_forge_integrity }}
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -163,13 +163,13 @@ jobs:
           from pathlib import Path
 
           sys.path.insert(0, str(Path('bootstrap/tools').resolve()))
-          import lean_package_generation
+          import project_forge_package_generation
 
-          lean_package_generation.verify_integrity(
-              Path(os.environ['LEAN_TARBALL']),
-              os.environ['LEAN_INTEGRITY'],
+          project_forge_package_generation.verify_integrity(
+              Path(os.environ['PROJECT_FORGE_TARBALL']),
+              os.environ['PROJECT_FORGE_INTEGRITY'],
           )
-          print('Lean package integrity verified')
+          print('Project Forge package integrity verified')
           PY
 
       - name: Generate deterministic workspace
@@ -179,19 +179,19 @@ jobs:
           python bootstrap/tools/generate_snapshot.py \
             --manifest target/POC_BOOTSTRAP.json \
             --output "$RUNNER_TEMP/generated" \
-            --lean-tarball "${{ steps.lean-package.outputs.tarball }}"
+            --project-forge-tarball "${{ steps.project-forge-package.outputs.tarball }}"
 
       - name: Validate generated workspace
         shell: bash
         env:
-          LEAN_PACKAGE: ${{ steps.manifest.outputs.lean_package }}
-          LEAN_VERSION: ${{ steps.manifest.outputs.lean_version }}
-          LEAN_PROFILE: ${{ steps.manifest.outputs.lean_profile }}
-          LEAN_INTEGRITY: ${{ steps.manifest.outputs.lean_integrity }}
+          PROJECT_FORGE_PACKAGE: ${{ steps.manifest.outputs.project_forge_package }}
+          PROJECT_FORGE_VERSION: ${{ steps.manifest.outputs.project_forge_version }}
+          PROJECT_FORGE_PROFILE: ${{ steps.manifest.outputs.project_forge_profile }}
+          PROJECT_FORGE_INTEGRITY: ${{ steps.manifest.outputs.project_forge_integrity }}
         run: |
           set -euo pipefail
           python -m compileall -q "$RUNNER_TEMP/generated/tools"
-          python "$RUNNER_TEMP/generated/tools/lean-package/check-managed-baselines.py"
+          python "$RUNNER_TEMP/generated/tools/project-forge-package/check-managed-baselines.py"
           python - <<'PY'
           import json
           import os
@@ -200,7 +200,7 @@ jobs:
           root = Path(os.environ['RUNNER_TEMP']) / 'generated'
           required = [
               'POC_BOOTSTRAP.json',
-              'LEAN_BASELINE.json',
+              'PROJECT_FORGE_BASELINE.json',
               'CORE_BASELINE.json',
               'DEPLOYMENT_BASELINE.json',
               'DEV_ENVIRONMENT.json',
@@ -212,26 +212,26 @@ jobs:
               print('OK', name)
 
           manifest = documents['POC_BOOTSTRAP.json']
-          approved = manifest['generation']['lean']
+          approved = manifest['generation']['project-forge']
           expected = {
-              'package': os.environ['LEAN_PACKAGE'],
-              'version': os.environ['LEAN_VERSION'],
-              'profile': os.environ['LEAN_PROFILE'],
-              'integrity': os.environ['LEAN_INTEGRITY'],
+              'package': os.environ['PROJECT_FORGE_PACKAGE'],
+              'version': os.environ['PROJECT_FORGE_VERSION'],
+              'profile': os.environ['PROJECT_FORGE_PROFILE'],
+              'integrity': os.environ['PROJECT_FORGE_INTEGRITY'],
           }
           if approved != expected:
-              raise SystemExit(f'Generated manifest Lean provenance mismatch: expected {expected!r}, found {approved!r}')
+              raise SystemExit(f'Generated manifest Project Forge provenance mismatch: expected {expected!r}, found {approved!r}')
 
-          lean = documents['LEAN_BASELINE.json']
+          project-forge = documents['PROJECT_FORGE_BASELINE.json']
           for key in ('package', 'version', 'profile'):
-              if lean.get(key) != expected[key]:
+              if project-forge.get(key) != expected[key]:
                   raise SystemExit(
-                      f'LEAN_BASELINE.json {key} mismatch: expected {expected[key]!r}, found {lean.get(key)!r}'
+                      f'PROJECT_FORGE_BASELINE.json {key} mismatch: expected {expected[key]!r}, found {project-forge.get(key)!r}'
                   )
-          components = lean.get('components') or {}
+          components = project-forge.get('components') or {}
           if set(components) != {'core', 'deployment'}:
               raise SystemExit(
-                  f'greenfield-poc Lean baseline must contain core and deployment components; found {sorted(components)}'
+                  f'greenfield-poc Project Forge baseline must contain core and deployment components; found {sorted(components)}'
               )
           PY
           python tools/check_baseline_handoff.py generated --generated "$RUNNER_TEMP/generated"

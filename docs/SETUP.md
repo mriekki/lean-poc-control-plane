@@ -21,7 +21,7 @@ If the App is already installed, do not remove or reinstall it just to continue.
 Return to the same invitation issue. While signed in as the GitHub account that was invited, add a new comment containing exactly:
 
 ```text
-/accept-lean
+/accept-project-forge
 ```
 
 Project Forge will automatically verify your GitHub identity, App installation, activation, and public Project Forge contract.
@@ -42,7 +42,7 @@ New Project: <your idea>
 
 ## If activation says the App is missing
 
-Use the **Project Forge Builder** installation link in your invitation issue, approve the App for the invited GitHub account, then comment `/accept-lean` again.
+Use the **Project Forge Builder** installation link in your invitation issue, approve the App for the invited GitHub account, then comment `/accept-project-forge` again.
 
 Do not create GitHub Actions variables, secrets, App credentials, or Control Plane configuration yourself. If the invitation issue does not provide a working App installation link, contact the person who invited you; that is a Project Forge administrator configuration problem.
 
