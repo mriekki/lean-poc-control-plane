@@ -137,7 +137,7 @@ def _validate_component(
 def validate_staged_baselines(root: Path) -> int:
     root = root.resolve()
     manifest = _staged_json(root, "POC_BOOTSTRAP.json")
-    approved = (manifest.get("generation") or {}).get("project_forge") or {}
+    approved = (manifest.get("generation") or {}).get("project-forge") or {}
     project_forge = _staged_json(root, "PROJECT_FORGE_BASELINE.json")
 
     if project_forge.get("schemaVersion") != 1:
