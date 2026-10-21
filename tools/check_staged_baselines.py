@@ -136,7 +136,7 @@ def _validate_component(
 
 def validate_staged_baselines(root: Path) -> int:
     root = root.resolve()
-    manifest = _staged_json(root, "POC_BOOTSTRAP.json")
+    manifest = _staged_json(root, "PROJECT_BOOTSTRAP.json")
     approved = (manifest.get("generation") or {}).get("project-forge") or {}
     project_forge = _staged_json(root, "PROJECT_FORGE_BASELINE.json")
 
@@ -145,7 +145,7 @@ def validate_staged_baselines(root: Path) -> int:
     for key in ("package", "version", "profile"):
         if project_forge.get(key) != approved.get(key):
             raise StagedBaselineError(
-                f"Staged PROJECT_FORGE_BASELINE.json {key} does not match staged POC_BOOTSTRAP.json"
+                f"Staged PROJECT_FORGE_BASELINE.json {key} does not match staged PROJECT_BOOTSTRAP.json"
             )
 
     components = project_forge.get("components")

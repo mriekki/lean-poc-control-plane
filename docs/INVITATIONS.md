@@ -8,7 +8,7 @@ Canonical Control Plane repository:
 mriekki/project-forge-control-plane
 ```
 
-The public GitHub App display name is **Project Forge Builder**. Canonical technical identifiers include `[invite-project-forge]`, `/accept-project-forge`, `poc-author`, `[generate-project]`, and `POC_BOOTSTRAP.json`.
+The public GitHub App display name is **Project Forge Builder**. Canonical technical identifiers include `[invite-project-forge]`, `/accept-project-forge`, `poc-author`, `[generate-project]`, and `PROJECT_BOOTSTRAP.json`.
 
 The onboarding model separates three questions:
 

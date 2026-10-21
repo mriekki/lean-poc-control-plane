@@ -10,7 +10,7 @@ Canonical repository identity:
 mriekki/project-forge-control-plane
 ```
 
-Technical compatibility commands and schema identifiers remain unchanged.
+Technical command identifiers remain unchanged. The canonical generation manifest is `PROJECT_BOOTSTRAP.json`; the retired `POC_BOOTSTRAP.json` filename is not supported as a compatibility alias.
 
 ## Security boundary
 
@@ -27,7 +27,7 @@ Public operational issues contain only safe identities:
 
 Issue bodies must remain empty. Private Project definitions, baseline contents, source code, credentials, and secrets never belong in a Control Plane issue.
 
-Private generation data stays in the target repository's `POC_BOOTSTRAP.json`. Workflows read target-private files only after minting a GitHub App installation token scoped to that exact repository.
+Private generation data stays in the target repository's `PROJECT_BOOTSTRAP.json`. Workflows read target-private files only after minting a GitHub App installation token scoped to that exact repository.
 
 Do not store PATs or npm publish tokens in this repository. The credential model is one GitHub App private key stored as an Actions secret; workflows mint short-lived installation tokens for the exact source/target repositories needed by each operation.
 
@@ -117,7 +117,7 @@ After discovery and Project Definition approval:
 
 1. the Builder owns a private, safe target repository;
 2. ChatGPT verifies exact GitHub owner/target safety;
-3. only the approved schema-v2 `POC_BOOTSTRAP.json` seed is written before generation;
+3. only the approved schema-v2 `PROJECT_BOOTSTRAP.json` seed is written before generation;
 4. the manifest pins exact Bootstrap provenance and an exact `@mriekki/project-forge` package/version/profile;
 5. ChatGPT opens an empty-body public issue here titled `[generate-project] owner/repository`;
 6. the author must equal the target owner and be ACTIVE with generation authorization;
@@ -145,4 +145,4 @@ with an empty body. The workflow validates authorization and baseline integrity,
 
 ## Repository rename boundary
 
-The canonical repository is `mriekki/project-forge-control-plane`. Historical `mriekki/project-forge-control-plane` links may redirect at GitHub, but new documentation, contracts, and tooling must emit the canonical Project Forge repository identity. Compatibility command/schema identifiers are intentionally unchanged.
+The canonical repository is `mriekki/project-forge-control-plane`. Historical repository links may redirect at GitHub, but new documentation, contracts, and tooling must emit the canonical Project Forge repository identity. Command identifiers remain unchanged; the generation-manifest filename is now exclusively `PROJECT_BOOTSTRAP.json`.

@@ -44,7 +44,7 @@ def component_metadata() -> dict[str, dict[str, str]]:
 
 def write_manifest_and_project_forge_baseline(root: Path, components: dict[str, dict[str, str]]) -> None:
     write_json(
-        root / "POC_BOOTSTRAP.json",
+        root / "PROJECT_BOOTSTRAP.json",
         {
             "generation": {
                 "project-forge": {

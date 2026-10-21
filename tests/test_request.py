@@ -127,7 +127,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("actions/create-github-app-token@v3", workflow)
         self.assertIn("APP_PRIVATE_KEY", workflow)
         self.assertIn("APP_CLIENT_ID", workflow)
-        self.assertIn("POC_BOOTSTRAP.json", workflow)
+        self.assertIn("PROJECT_BOOTSTRAP.json", workflow)
         self.assertIn("remote_generation.py validate-manifest", workflow)
         self.assertIn("generate_snapshot.py", workflow)
         self.assertIn("permission-workflows: write", workflow)

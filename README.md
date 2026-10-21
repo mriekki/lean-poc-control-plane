@@ -8,7 +8,7 @@ Canonical repository identity after the coordinated rename:
 mriekki/project-forge-control-plane
 ```
 
-Canonical technical commands and schema identifiers include `[invite-project-forge]`, `/accept-project-forge`, `[generate-project]`, and `POC_BOOTSTRAP.json`.
+Canonical technical commands and schema identifiers include `[invite-project-forge]`, `/accept-project-forge`, `[generate-project]`, and `PROJECT_BOOTSTRAP.json`.
 
 ## Admin quick start
 
@@ -86,14 +86,14 @@ For both request types, the issue body must be empty. Private product definition
 
 The request author must match the target owner and be ACTIVE for the relevant capability. Foundational/platform repositories are never valid generation or generic Core-sync targets.
 
-The approved `POC_BOOTSTRAP.json` stays private in a generation target. `CORE_BASELINE.json` stays private in a Core-sync target. Workflows read those files only after minting a short-lived GitHub App installation token scoped to the exact repository.
+The approved `PROJECT_BOOTSTRAP.json` stays private in a generation target. `CORE_BASELINE.json` stays private in a Core-sync target. Workflows read those files only after minting a short-lived GitHub App installation token scoped to the exact repository.
 
 ## GitHub-first generation
 
 The `[generate-project]` workflow:
 
 1. validates the authorized, owner-authored, empty-body request;
-2. reads and validates the private target `POC_BOOTSTRAP.json`;
+2. reads and validates the private target `PROJECT_BOOTSTRAP.json`;
 3. obtains a Bootstrap-only source token and an exact-target token;
 4. resolves/verifies the exact public `@mriekki/project-forge` package selected by the approved manifest;
 5. runs Bootstrap's canonical deterministic generation path;
