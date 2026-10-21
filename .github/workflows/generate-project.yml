@@ -113,7 +113,7 @@ jobs:
         shell: bash
         run: |
           python bootstrap/tools/remote_generation.py validate-manifest \
-            --manifest target/POC_BOOTSTRAP.json \
+            --manifest target/PROJECT_BOOTSTRAP.json \
             --request-author "${{ steps.request.outputs.request_author }}" \
             --expected-bootstrap-commit "${{ steps.bootstrap.outputs.sha }}" \
             --expected-target-repository "${{ steps.request.outputs.target_repository }}" \
@@ -177,7 +177,7 @@ jobs:
         run: |
           set -euo pipefail
           python bootstrap/tools/generate_snapshot.py \
-            --manifest target/POC_BOOTSTRAP.json \
+            --manifest target/PROJECT_BOOTSTRAP.json \
             --output "$RUNNER_TEMP/generated" \
             --project-forge-tarball "${{ steps.project-forge-package.outputs.tarball }}"
 
@@ -199,7 +199,7 @@ jobs:
 
           root = Path(os.environ['RUNNER_TEMP']) / 'generated'
           required = [
-              'POC_BOOTSTRAP.json',
+              'PROJECT_BOOTSTRAP.json',
               'PROJECT_FORGE_BASELINE.json',
               'CORE_BASELINE.json',
               'DEPLOYMENT_BASELINE.json',
@@ -211,7 +211,7 @@ jobs:
               documents[name] = json.loads((root / name).read_text(encoding='utf-8'))
               print('OK', name)
 
-          manifest = documents['POC_BOOTSTRAP.json']
+          manifest = documents['PROJECT_BOOTSTRAP.json']
           approved = manifest['generation']['project-forge']
           expected = {
               'package': os.environ['PROJECT_FORGE_PACKAGE'],
