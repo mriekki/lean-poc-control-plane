@@ -58,9 +58,9 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
     def test_invitation_docs_use_canonical_identifiers(self):
         text = (ROOT / "docs" / "INVITATIONS.md").read_text(encoding="utf-8")
         self.assertIn("Project Forge Developer Invitations", text)
-        self.assertIn("poc-author", text)
+        self.assertIn("project-author", text)
         self.assertIn("[invite-project-forge]", text)
-        self.assertNotIn("New POC:", text)
+        self.assertNotIn("New Project:", text)
 
     def test_test_mode_has_clear_preview_and_non_authorizing_result(self):
         invite = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")

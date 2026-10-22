@@ -34,7 +34,7 @@ def registry_value() -> dict:
             {
                 "githubOwner": "kyleriekki-89",
                 "status": "active",
-                "role": "poc-author",
+                "role": "project-author",
                 "contractChannel": "stable",
                 "capabilities": ["generate-project", "sync-core"],
             },
@@ -158,7 +158,7 @@ class InvitationTests(unittest.TestCase):
         registry = invitation.load_registry(self.registry_path)
         record = invitation.developer(registry, "daniel-example")
         self.assertEqual(record["status"], "active")
-        self.assertEqual(record["role"], "poc-author")
+        self.assertEqual(record["role"], "project-author")
         self.assertEqual(record["capabilities"], ["generate-project", "sync-core"])
         self.assertEqual(record["activationIssue"], 12)
         allowed = invitation.load_allowed_owners(self.allowed_path)

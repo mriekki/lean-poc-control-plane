@@ -16,7 +16,7 @@ ACCEPT_COMMAND = "/accept-project-forge"
 DECLINE_COMMAND = "/decline-project-forge"
 DOCTOR_COMMAND = "/project-forge-doctor"
 
-VALID_ROLES = {"admin", "poc-author"}
+VALID_ROLES = {"admin", "project-author"}
 VALID_STATUSES = {"active", "revoked"}
 VALID_CAPABILITIES = {
     "generate-project",
@@ -99,8 +99,8 @@ def load_registry(path: Path) -> dict[str, Any]:
             raise InvitationError(f"Unknown capabilities for {owner}: {sorted(unknown)}")
         if status == "revoked" and capabilities:
             raise InvitationError(f"Revoked developer must have no capabilities: {owner}")
-        if role == "poc-author" and ({"invite-developer", "revoke-developer"} & set(capabilities)):
-            raise InvitationError(f"POC author cannot have admin capabilities: {owner}")
+        if role == "project-author" and ({"invite-developer", "revoke-developer"} & set(capabilities)):
+            raise InvitationError(f"Project author cannot have admin capabilities: {owner}")
         if status == "active" and role == "admin":
             required = {"generate-project", "sync-core", "invite-developer", "revoke-developer"}
             if not required <= set(capabilities):
@@ -385,7 +385,7 @@ def activate(
     value = {
         "githubOwner": owner,
         "status": "active",
-        "role": "poc-author",
+        "role": "project-author",
         "contractChannel": "stable",
         "capabilities": ["generate-project", "sync-core"],
         "invitedBy": invited_by,

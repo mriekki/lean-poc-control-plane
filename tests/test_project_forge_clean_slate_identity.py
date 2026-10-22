@@ -21,7 +21,7 @@ class ProjectForgeCleanSlateIdentityTests(unittest.TestCase):
             rf"|{title}(?=[A-Z])"
         )
 
-        retired_generation = "generate-" + "poc"
+        retired_generation = "generate-" + "project"
 
         result = subprocess.run(
             ["git", "ls-files"],

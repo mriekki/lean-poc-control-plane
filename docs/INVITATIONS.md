@@ -8,7 +8,7 @@ Canonical Control Plane repository:
 mriekki/project-forge-control-plane
 ```
 
-The public GitHub App display name is **Project Forge Builder**. Canonical technical identifiers include `[invite-project-forge]`, `/accept-project-forge`, `poc-author`, `[generate-project]`, and `PROJECT_BOOTSTRAP.json`.
+The public GitHub App display name is **Project Forge Builder**. Canonical technical identifiers include `[invite-project-forge]`, `/accept-project-forge`, `project-author`, `[generate-project]`, and `PROJECT_BOOTSTRAP.json`.
 
 The onboarding model separates three questions:
 
@@ -39,7 +39,7 @@ The self-test is zero-input: submit the prefilled empty-body issue. The workflow
 Current technical roles remain:
 
 - `admin` — normal Project Builder capabilities plus invitation/revocation administration;
-- `poc-author` — role identifier for a normal Project Builder with generation and supported update/sync authorization.
+- `project-author` — role identifier for a normal Project Builder with generation and supported update/sync authorization.
 
 `config/allowed-owners.json` remains a generated authorization projection for existing validators and must mirror ACTIVE developers with `generate-project`. CI validates that invariant.
 
