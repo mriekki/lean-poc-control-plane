@@ -34,7 +34,7 @@ def baseline_documents(*, overlap: bool = False) -> dict[str, dict]:
             "schemaVersion": 1,
             "package": "@mriekki/project-forge",
             "version": "0.1.0",
-            "profile": "greenfield-poc",
+            "profile": "greenfield-project",
             "components": {
                 "core": {
                     "repository": "mriekki/project-forge-core",
@@ -45,7 +45,7 @@ def baseline_documents(*, overlap: bool = False) -> dict[str, dict]:
                 "deployment": {
                     "repository": "mriekki/project-forge-deployment-kit",
                     "commit": "b" * 40,
-                    "distribution": "greenfield-poc",
+                    "distribution": "greenfield-project",
                 },
             },
         },

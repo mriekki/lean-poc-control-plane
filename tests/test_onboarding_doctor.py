@@ -32,7 +32,7 @@ def registry_value() -> dict:
             {
                 "githubOwner": "kyleriekki-89",
                 "status": "active",
-                "role": "poc-author",
+                "role": "project-author",
                 "contractChannel": "stable",
                 "capabilities": ["generate-project", "sync-core"],
             },

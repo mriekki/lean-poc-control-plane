@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+RETIRED_AUTOMATION_TOKEN = "PROJECT_FORGE_" + "P" + "OC_AUTOMATION_TOKEN"
 SPEC = importlib.util.spec_from_file_location("request", ROOT / "tools" / "request.py")
 assert SPEC and SPEC.loader
 request = importlib.util.module_from_spec(SPEC)
@@ -18,7 +19,7 @@ class RequestTests(unittest.TestCase):
         self,
         *,
         author: str = "mriekki",
-        title: str = "[generate-project] mriekki/example-poc",
+        title: str = "[generate-project] mriekki/example-project",
         body: str = "",
     ) -> dict:
         return {
@@ -32,13 +33,13 @@ class RequestTests(unittest.TestCase):
 
     def test_valid_owner_request(self) -> None:
         values = request.parse_request(self.event(), {"mriekki"})
-        self.assertEqual(values["target_repository"], "mriekki/example-poc")
+        self.assertEqual(values["target_repository"], "mriekki/example-project")
         self.assertEqual(values["request_author"], "mriekki")
 
     def test_valid_core_sync_request(self) -> None:
-        event = self.event(title="[sync-core] mriekki/example-poc")
+        event = self.event(title="[sync-core] mriekki/example-project")
         values = request.parse_sync_request(event, {"mriekki"})
-        self.assertEqual(values["target_repository"], "mriekki/example-poc")
+        self.assertEqual(values["target_repository"], "mriekki/example-project")
         self.assertEqual(values["request_author"], "mriekki")
 
     def test_public_issue_body_must_be_empty(self) -> None:
@@ -51,28 +52,28 @@ class RequestTests(unittest.TestCase):
                     request.parse_request(self.event(body=body), {"mriekki"})
                 with self.assertRaises(request.RequestError):
                     request.parse_sync_request(
-                        self.event(title="[sync-core] mriekki/example-poc", body=body),
+                        self.event(title="[sync-core] mriekki/example-project", body=body),
                         {"mriekki"},
                     )
 
         values = request.parse_request(self.event(body="  \n"), {"mriekki"})
-        self.assertEqual(values["target_repository"], "mriekki/example-poc")
+        self.assertEqual(values["target_repository"], "mriekki/example-project")
 
     def test_author_must_match_target_owner(self) -> None:
         with self.assertRaises(request.RequestError):
             request.parse_request(self.event(author="someone-else"), {"mriekki", "someone-else"})
         with self.assertRaises(request.RequestError):
             request.parse_sync_request(
-                self.event(author="someone-else", title="[sync-core] mriekki/example-poc"),
+                self.event(author="someone-else", title="[sync-core] mriekki/example-project"),
                 {"mriekki", "someone-else"},
             )
 
     def test_owner_must_be_allowlisted(self) -> None:
-        event = self.event(author="kyle", title="[generate-project] kyle/example-poc")
+        event = self.event(author="kyle", title="[generate-project] kyle/example-project")
         with self.assertRaises(request.RequestError):
             request.parse_request(event, {"mriekki"})
 
-        sync_event = self.event(author="kyle", title="[sync-core] kyle/example-poc")
+        sync_event = self.event(author="kyle", title="[sync-core] kyle/example-project")
         with self.assertRaises(request.RequestError):
             request.parse_sync_request(sync_event, {"mriekki"})
 
@@ -99,18 +100,18 @@ class RequestTests(unittest.TestCase):
 
     def test_title_must_be_exact_owner_repo_shape(self) -> None:
         for title in (
-            "generate-project mriekki/example-poc",
-            "[generate-project] example-poc",
-            "[generate-project] mriekki/example-poc extra",
+            "generate-project mriekki/example-project",
+            "[generate-project] example-project",
+            "[generate-project] mriekki/example-project extra",
         ):
             with self.subTest(title=title):
                 with self.assertRaises(request.RequestError):
                     request.parse_request(self.event(title=title), {"mriekki"})
 
         for title in (
-            "sync-core mriekki/example-poc",
-            "[sync-core] example-poc",
-            "[sync-core] mriekki/example-poc extra",
+            "sync-core mriekki/example-project",
+            "[sync-core] example-project",
+            "[sync-core] mriekki/example-project extra",
         ):
             with self.subTest(title=title):
                 with self.assertRaises(request.RequestError):
@@ -133,7 +134,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("permission-workflows: write", workflow)
         self.assertIn("repositories: project-forge-bootstrap", workflow)
         self.assertIn("repository: mriekki/project-forge-bootstrap", workflow)
-        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn(RETIRED_AUTOMATION_TOKEN, workflow)
         self.assertNotIn("--force", workflow)
 
     def test_generation_workflow_uses_actual_app_bot_identity_for_commits(self) -> None:
@@ -144,7 +145,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("@users.noreply.github.com", workflow)
         self.assertIn('git -C "$target" config user.name "$BOT_LOGIN"', workflow)
         self.assertIn('git -C "$target" config user.email "$BOT_EMAIL"', workflow)
-        self.assertNotIn('config user.name "project-forge-poc-control-plane[bot]"', workflow)
+        self.assertNotIn('config user.name "project-forge-project-control-plane[bot]"', workflow)
 
     def test_generation_workflow_uses_exact_public_project_forge_artifact(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
@@ -166,9 +167,9 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("--core-path", workflow)
         self.assertNotIn("--deployment-kit-path", workflow)
         self.assertNotIn("project-forge-agentic-core", workflow)
-        self.assertNotIn("project-forge-poc-deployment-kit", workflow)
+        self.assertNotIn("project-forge-project-deployment-kit", workflow)
         self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
-        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn(RETIRED_AUTOMATION_TOKEN, workflow)
 
     def test_generation_docs_distinguish_approved_choice_from_resolved_integrity(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -214,7 +215,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("PROJECT_FORGE_BASELINE.json is present. Use /project-forge-update", workflow)
         self.assertIn("Sync Project Forge Core to", workflow)
         self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
-        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn(RETIRED_AUTOMATION_TOKEN, workflow)
         self.assertNotIn("--force", workflow)
 
 

@@ -10,7 +10,7 @@ Canonical repository identity:
 mriekki/project-forge-control-plane
 ```
 
-Technical command identifiers remain unchanged. The canonical generation manifest is `PROJECT_BOOTSTRAP.json`; the retired `POC_BOOTSTRAP.json` filename is not supported as a compatibility alias.
+The canonical generation manifest is `PROJECT_BOOTSTRAP.json`. No retired predecessor manifest filename is supported as a compatibility alias.
 
 ## Security boundary
 
