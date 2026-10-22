@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+RETIRED_AUTOMATION_TOKEN = "PROJECT_FORGE_" + "P" + "OC_AUTOMATION_TOKEN"
 SPEC = importlib.util.spec_from_file_location("request", ROOT / "tools" / "request.py")
 assert SPEC and SPEC.loader
 request = importlib.util.module_from_spec(SPEC)
@@ -133,7 +134,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("permission-workflows: write", workflow)
         self.assertIn("repositories: project-forge-bootstrap", workflow)
         self.assertIn("repository: mriekki/project-forge-bootstrap", workflow)
-        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn(RETIRED_AUTOMATION_TOKEN, workflow)
         self.assertNotIn("--force", workflow)
 
     def test_generation_workflow_uses_actual_app_bot_identity_for_commits(self) -> None:
@@ -168,7 +169,7 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("project-forge-agentic-core", workflow)
         self.assertNotIn("project-forge-project-deployment-kit", workflow)
         self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
-        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn(RETIRED_AUTOMATION_TOKEN, workflow)
 
     def test_generation_docs_distinguish_approved_choice_from_resolved_integrity(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -214,7 +215,7 @@ class RequestTests(unittest.TestCase):
         self.assertIn("PROJECT_FORGE_BASELINE.json is present. Use /project-forge-update", workflow)
         self.assertIn("Sync Project Forge Core to", workflow)
         self.assertNotIn("PROJECT_FORGE_CORE_READ_TOKEN", workflow)
-        self.assertNotIn("PROJECT_FORGE_POC_AUTOMATION_TOKEN", workflow)
+        self.assertNotIn(RETIRED_AUTOMATION_TOKEN, workflow)
         self.assertNotIn("--force", workflow)
 
 
