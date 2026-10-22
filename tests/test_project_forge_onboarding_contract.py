@@ -18,7 +18,8 @@ class ProjectForgeOnboardingContractTests(unittest.TestCase):
 
     def test_invitation_derives_app_install_url_without_admin_doc_fallback(self):
         text = (ROOT / ".github" / "workflows" / "invite-developer.yml").read_text(encoding="utf-8")
-        self.assertIn("actions/create-github-app-token@v3", text)
+        self.assertIn("actions/create-github-app-token@", text)
+        self.assertNotIn("actions/create-github-app-token@v3", text)
         self.assertIn("outputs.app-slug", text)
         self.assertIn("/installations/new", text)
         self.assertNotIn("APP_INSTALL_URL", text)

@@ -13,8 +13,8 @@ jobs:
     if: startsWith(github.event.issue.title, '[invite-project-forge] ')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
 
@@ -38,7 +38,7 @@ jobs:
 
       - name: Resolve Project Forge Builder app identity
         id: app-identity
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -46,7 +46,7 @@ jobs:
           permission-contents: read
 
       - name: Publish Project Forge onboarding instructions
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           TARGET_OWNER: ${{ steps.invite.outputs.target_owner }}
           EXPIRY_DAYS: ${{ steps.policy.outputs.expiry_days }}
@@ -94,8 +94,8 @@ jobs:
     if: startsWith(github.event.issue.title, '[test-invite-forge]')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
 
@@ -119,7 +119,7 @@ jobs:
 
       - name: Resolve Project Forge Builder app identity
         id: test-app-identity
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -127,7 +127,7 @@ jobs:
           permission-contents: read
 
       - name: Publish onboarding simulation and invitation message preview
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           TARGET_OWNER: ${{ steps.test-invite.outputs.target_owner }}
           EXPIRY_DAYS: ${{ steps.test-policy.outputs.expiry_days }}
