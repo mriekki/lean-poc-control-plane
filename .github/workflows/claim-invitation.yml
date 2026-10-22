@@ -22,10 +22,10 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
 
@@ -40,7 +40,7 @@ jobs:
       - name: Verify GitHub App installation
         id: app-token
         continue-on-error: true
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -49,7 +49,7 @@ jobs:
 
       - name: Explain missing App installation
         if: steps.app-token.outcome != 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const body = [
@@ -127,7 +127,7 @@ jobs:
 
       - name: Report Project Forge activation and readiness
         if: steps.app-token.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           TARGET_OWNER: ${{ steps.claim.outputs.target_owner }}
           CONTRACT_OK: ${{ steps.contract.outcome }}
@@ -193,10 +193,10 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
 
@@ -211,7 +211,7 @@ jobs:
       - name: Verify GitHub App installation for test identity
         id: test-app-token
         continue-on-error: true
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -246,7 +246,7 @@ jobs:
           PY
 
       - name: Report onboarding test result
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           TARGET_OWNER: ${{ steps.test-claim.outputs.target_owner }}
           APP_OK: ${{ steps.test-app-token.outcome }}
