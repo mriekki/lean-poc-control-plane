@@ -125,7 +125,8 @@ class RequestTests(unittest.TestCase):
 
     def test_generation_workflow_uses_github_app_target_isolation_and_private_seed_manifest(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
-        self.assertIn("actions/create-github-app-token@v3", workflow)
+        self.assertIn("actions/create-github-app-token@", workflow)
+        self.assertNotIn("actions/create-github-app-token@v3", workflow)
         self.assertIn("APP_PRIVATE_KEY", workflow)
         self.assertIn("APP_CLIENT_ID", workflow)
         self.assertIn("PROJECT_BOOTSTRAP.json", workflow)
@@ -149,7 +150,8 @@ class RequestTests(unittest.TestCase):
 
     def test_generation_workflow_uses_exact_public_project_forge_artifact(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
-        self.assertIn("actions/setup-node@v6", workflow)
+        self.assertIn("actions/setup-node@", workflow)
+        self.assertNotIn("actions/setup-node@v6", workflow)
         self.assertIn("steps.manifest.outputs.project_forge_package", workflow)
         self.assertIn("steps.manifest.outputs.project_forge_version", workflow)
         self.assertIn("steps.manifest.outputs.project_forge_profile", workflow)
