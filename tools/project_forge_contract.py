@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import sys
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -24,9 +25,11 @@ class ProjectForgeContractError(RuntimeError):
 
 
 def _load_json_source(source: str) -> dict[str, Any]:
-    if source.startswith(("https://", "http://")):
-        with urllib.request.urlopen(source, timeout=20) as response:  # noqa: S310 - fixed/explicit HTTPS source in workflow
+    if source.startswith("https://"):
+        with urllib.request.urlopen(source, timeout=20) as response:
             raw = response.read().decode("utf-8")
+    elif source.startswith("http://"):
+        raise ProjectForgeContractError("Remote Project Forge descriptors must use HTTPS")
     else:
         raw = Path(source).read_text(encoding="utf-8")
     value = json.loads(raw)
@@ -178,8 +181,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return int(args.func(args))
-    except (OSError, ValueError, json.JSONDecodeError, ProjectForgeContractError) as exc:
-        print(f"Project Forge contract error: {exc}", file=os.sys.stderr)
+    except (OSError, ValueError, ProjectForgeContractError) as exc:
+        print(f"Project Forge contract error: {exc}", file=sys.stderr)
         return 2
 
 
