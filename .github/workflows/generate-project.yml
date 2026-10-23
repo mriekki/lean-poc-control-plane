@@ -188,6 +188,7 @@ jobs:
           PROJECT_FORGE_VERSION: ${{ steps.manifest.outputs.project_forge_version }}
           PROJECT_FORGE_PROFILE: ${{ steps.manifest.outputs.project_forge_profile }}
           PROJECT_FORGE_INTEGRITY: ${{ steps.manifest.outputs.project_forge_integrity }}
+          PYTHONPYCACHEPREFIX: ${{ runner.temp }}/project-forge-pycache
         run: |
           set -euo pipefail
           python -m compileall -q "$RUNNER_TEMP/generated/tools"
@@ -235,6 +236,17 @@ jobs:
               )
           PY
           python tools/check_baseline_handoff.py generated --generated "$RUNNER_TEMP/generated"
+
+          if find "$RUNNER_TEMP/generated" -type f -name '*.pyc' -print -quit | grep -q .; then
+            echo "Generated workspace contains Python bytecode; validation caches must stay outside publication." >&2
+            find "$RUNNER_TEMP/generated" -type f -name '*.pyc' -print >&2
+            exit 2
+          fi
+          if find "$RUNNER_TEMP/generated" -type d -name '__pycache__' -print -quit | grep -q .; then
+            echo "Generated workspace contains __pycache__; validation caches must stay outside publication." >&2
+            find "$RUNNER_TEMP/generated" -type d -name '__pycache__' -print >&2
+            exit 2
+          fi
 
       - name: Publish generated baseline
         id: publish
