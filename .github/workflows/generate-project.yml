@@ -89,7 +89,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: mriekki/project-forge-bootstrap
-          ref: ${{ steps.public-contract.outputs.bootstrap_commit || 'main' }}
+          ref: ${{ steps.public-contract.outputs.bootstrap_commit }}
           token: ${{ steps.source-token.outputs.token }}
           path: bootstrap
           fetch-depth: 1
@@ -98,7 +98,6 @@ jobs:
         id: bootstrap
         shell: bash
         env:
-          BOOTSTRAP_PIN_PRESENT: ${{ steps.public-contract.outputs.bootstrap_pin_present }}
           BOOTSTRAP_REPOSITORY: ${{ steps.public-contract.outputs.bootstrap_repository }}
           BOOTSTRAP_COMMIT: ${{ steps.public-contract.outputs.bootstrap_commit }}
           BOOTSTRAP_PROTOCOL_VERSION: ${{ steps.public-contract.outputs.bootstrap_protocol_version }}
@@ -108,19 +107,15 @@ jobs:
           sha="$(git -C bootstrap rev-parse HEAD)"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
-          if [ "$BOOTSTRAP_PIN_PRESENT" = "true" ]; then
-            if [ "$sha" != "$BOOTSTRAP_COMMIT" ]; then
-              echo "Accepted Bootstrap checkout mismatch: expected $BOOTSTRAP_COMMIT, found $sha" >&2
-              exit 2
-            fi
-            python tools/project_forge_contract.py verify-bootstrap \
-              --root bootstrap \
-              --repository "$BOOTSTRAP_REPOSITORY" \
-              --protocol-version "$BOOTSTRAP_PROTOCOL_VERSION" \
-              --catalog-version "$BOOTSTRAP_CATALOG_VERSION"
-          else
-            echo "::warning::Public Project Forge descriptor has no generation.bootstrap pin; using Bootstrap main compatibility fallback."
+          if [ "$sha" != "$BOOTSTRAP_COMMIT" ]; then
+            echo "Accepted Bootstrap checkout mismatch: expected $BOOTSTRAP_COMMIT, found $sha" >&2
+            exit 2
           fi
+          python tools/project_forge_contract.py verify-bootstrap \
+            --root bootstrap \
+            --repository "$BOOTSTRAP_REPOSITORY" \
+            --protocol-version "$BOOTSTRAP_PROTOCOL_VERSION" \
+            --catalog-version "$BOOTSTRAP_CATALOG_VERSION"
 
       - name: Checkout private target seed
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
