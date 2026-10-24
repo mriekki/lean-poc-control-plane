@@ -38,14 +38,16 @@ def _load_json_source(source: str) -> dict[str, Any]:
     return value
 
 
-def resolve_bootstrap_generation(descriptor: dict[str, Any]) -> dict[str, Any] | None:
+def resolve_bootstrap_generation(descriptor: dict[str, Any]) -> dict[str, Any]:
     generation = descriptor.get("generation")
     if not isinstance(generation, dict):
         raise ProjectForgeContractError("Project Forge descriptor generation must be an object")
 
     bootstrap = generation.get("bootstrap")
     if bootstrap is None:
-        return None
+        raise ProjectForgeContractError(
+            "Project Forge descriptor generation.bootstrap pin is required"
+        )
     if not isinstance(bootstrap, dict):
         raise ProjectForgeContractError("generation.bootstrap must be an object")
 
@@ -128,22 +130,12 @@ def _write_github_output(values: dict[str, str]) -> None:
 def _resolve_command(args: argparse.Namespace) -> int:
     descriptor = _load_json_source(args.descriptor)
     bootstrap = resolve_bootstrap_generation(descriptor)
-    if bootstrap is None:
-        values = {
-            "bootstrap_pin_present": "false",
-            "bootstrap_repository": EXPECTED_BOOTSTRAP_REPOSITORY,
-            "bootstrap_commit": "",
-            "bootstrap_protocol_version": "",
-            "bootstrap_catalog_version": "",
-        }
-    else:
-        values = {
-            "bootstrap_pin_present": "true",
-            "bootstrap_repository": str(bootstrap["repository"]),
-            "bootstrap_commit": str(bootstrap["commit"]),
-            "bootstrap_protocol_version": str(bootstrap["protocolVersion"]),
-            "bootstrap_catalog_version": str(bootstrap["catalogVersion"]),
-        }
+    values = {
+        "bootstrap_repository": str(bootstrap["repository"]),
+        "bootstrap_commit": str(bootstrap["commit"]),
+        "bootstrap_protocol_version": str(bootstrap["protocolVersion"]),
+        "bootstrap_catalog_version": str(bootstrap["catalogVersion"]),
+    }
     _write_github_output(values)
     print(json.dumps(values, sort_keys=True))
     return 0
