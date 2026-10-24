@@ -45,10 +45,14 @@ class ProjectForgeContractTests(unittest.TestCase):
             },
         )
 
-    def test_missing_generation_bootstrap_uses_legacy_compatibility_path(self) -> None:
+    def test_missing_generation_bootstrap_fails_closed(self) -> None:
         descriptor = self.descriptor()
         descriptor["generation"].pop("bootstrap")
-        self.assertIsNone(project_forge_contract.resolve_bootstrap_generation(descriptor))
+        with self.assertRaisesRegex(
+            project_forge_contract.ProjectForgeContractError,
+            r"generation\.bootstrap pin is required",
+        ):
+            project_forge_contract.resolve_bootstrap_generation(descriptor)
 
     def test_malformed_or_wrong_bootstrap_provenance_fails_closed(self) -> None:
         cases = [
@@ -95,16 +99,18 @@ class ProjectForgeContractTests(unittest.TestCase):
                     catalog_version=12,
                 )
 
-    def test_generation_workflow_uses_public_pin_before_private_manifest_validation(self) -> None:
+    def test_generation_workflow_requires_public_pin_before_private_manifest_validation(self) -> None:
         workflow = (ROOT / ".github/workflows/generate-project.yml").read_text(encoding="utf-8")
         resolve = "python tools/project_forge_contract.py resolve-bootstrap"
-        checkout_ref = "ref: ${{ steps.public-contract.outputs.bootstrap_commit || 'main' }}"
+        checkout_ref = "ref: ${{ steps.public-contract.outputs.bootstrap_commit }}"
         verify = "python tools/project_forge_contract.py verify-bootstrap"
         manifest = "remote_generation.py validate-manifest"
         self.assertIn(resolve, workflow)
         self.assertIn(checkout_ref, workflow)
         self.assertIn(verify, workflow)
-        self.assertIn("using Bootstrap main compatibility fallback", workflow)
+        self.assertNotIn("bootstrap_commit || 'main'", workflow)
+        self.assertNotIn("bootstrap_pin_present", workflow)
+        self.assertNotIn("Bootstrap main compatibility fallback", workflow)
         self.assertLess(workflow.index(resolve), workflow.index(checkout_ref))
         self.assertLess(workflow.index(verify), workflow.index(manifest))
         self.assertIn('--expected-bootstrap-commit "${{ steps.bootstrap.outputs.sha }}"', workflow)
